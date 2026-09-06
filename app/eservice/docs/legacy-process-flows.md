@@ -466,10 +466,10 @@ The evaluation stages are chained by PHPRunner events, not entered independently
 | `_bid_techncial_list` | **`es_bid_technical_eval`** — ENUM `result` `pass/fail/pending` + numeric `score` | ✅ |
 | `_bid_financial_evaluation` | **`es_bid_financial_eval`** — `computation_errors`, `corrected_bid_price`, `price_after_preferences`, `exchange_rate`, `rank_position`, `preferred_bidder`, `is_msme`, `reasons_errors` | ✅ |
 | `bid_final_status` verdict codes | **`es_bid_analysis.final_outcome`** ENUM `pending/compliant/non_compliant/no_objection/objection` | ✅ (relabelled) |
-| `_bid_assessment_criteria`, `_bid_technical_criteria` | — | ❌ not built |
-| `_bid_opening_observations`, `_bid_evaluation_observations` | — | ❌ not built |
-| `_bid_post_qualification` | — | ❌ not built |
-| `_bid_recommedation_` | — | ❌ not built |
+| `_bid_assessment_criteria`, `_bid_technical_criteria` | criteria checklists | **`es_bid_list_item`** (`kind` = `assessment_criteria` / `technical_criteria`) — captured in `bid_analysis_evaluate.php` | ✅ |
+| `_bid_opening_observations`, `_bid_evaluation_observations` | observations | **`es_bid_list_item`** (`kind` = `bid_opening_observation` / `evaluation_observation`) | ✅ |
+| `_bid_post_qualification` | post‑qual | **`es_bid_list_item`** (`kind` = `post_qualification`) | ✅ |
+| `_bid_recommedation_` | recommendations to DG | **`es_bid_list_item`** (`kind` = `recommendation`) | ✅ |
 | event auto‑propagation (opening → technical → financial) | replaced by one editor — **`bid_analysis_evaluate.php`** + **`bid_eval_save.php`** (`$entity` = `technical` | `financial`), no shadow inserts | ✅ (simpler) |
 | `submit_assess` / `archive` / `dg_feedback=52` lock flags | `es_bid_analysis.stage` + `current_owner_id` ownership check in `bid_analysis_view.php` / `bid_analysis_action.php` | ✅ |
 
@@ -713,10 +713,10 @@ Legend: ✅ built · ⚠ partial · ❌ not yet built.
 | `_bid_financial_evaluation` | financial evaluation | `es_bid_financial_eval` (`rank_position`, `preferred_bidder`, `is_msme`, `exchange_rate`) | ✅ |
 | `changes%` / `rate_equ` (SQL‑only derived cols) | error % / FX‑equivalent | computed in `bid_analysis_evaluate.php` / views as needed | ⚠ ad hoc |
 | `bid_final_status` 20 / 21 / 98 | verdict | `es_bid_analysis.final_outcome` ENUM | ✅ relabelled |
-| `_bid_assessment_criteria`, `_bid_technical_criteria` | criteria checklists | — | ❌ |
-| `_bid_opening_observations`, `_bid_evaluation_observations` | observations | — | ❌ |
-| `_bid_post_qualification` | post‑qualification | — | ❌ |
-| `_bid_recommedation_` | recommendations to DG | — | ❌ |
+| `_bid_assessment_criteria`, `_bid_technical_criteria` | criteria checklists | `es_bid_list_item` (`kind` per type) via `bid_analysis_evaluate.php` | ✅ |
+| `_bid_opening_observations`, `_bid_evaluation_observations` | observations | `es_bid_list_item` | ✅ |
+| `_bid_post_qualification` | post‑qualification | `es_bid_list_item` | ✅ |
+| `_bid_recommedation_` | recommendations to DG | `es_bid_list_item` | ✅ |
 | `_bid_assessment_events` → `_bid_techncial_list` → `_bid_financial_evaluation` auto‑inserts | event chaining | single editor `bid_analysis_evaluate.php` + `bid_eval_save.php` | ✅ simpler |
 | `_bid_analysis_action_log` + `_bid_routing` (later hops commented out) | audit | `es_bid_routing` — all hops | ✅ better |
 | `_bid_analysis_messaging` | internal reviewer thread | `es_bid_message` | ✅ |
@@ -828,10 +828,9 @@ SQL: `app/eservice/sql/05_rbac.sql` (tables + seed). See also the RBAC design no
 
 Distilled from the ⚠ / ❌ rows above:
 
-1. **Evaluation child records** — criteria checklists (`_bid_assessment_criteria`,
-   `_bid_technical_criteria`), observations (`_bid_opening_observations`,
-   `_bid_evaluation_observations`), post‑qualification (`_bid_post_qualification`),
-   recommendations (`_bid_recommedation_`). All are simple `analysis_id` + numbered‑text tables.
+1. **Officer's recommended verdict** — `es_bid_analysis.final_outcome` is only ever set by the
+   DG's approve/reject in `bid_analysis_action.php`; the officer has no field to record the
+   recommended outcome the way legacy `bid_final_status` did.
 2. **Board review transitions** — `board_review` is an ENUM value with no `bid_analysis_action.php`
    path into or out of it.
 3. **ACB vetting path** — `dg_feedback` 90/93 equivalents, an `es_bid_acb_history` trail, and the

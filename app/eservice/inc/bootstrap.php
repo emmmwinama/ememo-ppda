@@ -283,6 +283,17 @@ function es_alloc_log(int $registryId): array {
     );
 }
 
+/** Very short elapsed time from $ts to now: "14d", "3h", "45m", "2mo", or "—". */
+function es_span(?string $ts): string {
+    if (!$ts || $ts === '0000-00-00 00:00:00') return '—';
+    $s = max(0, time() - strtotime($ts));
+    if ($s < 3600)     return max(1, (int) floor($s / 60)) . 'm';
+    if ($s < 86400)    return (int) floor($s / 3600) . 'h';
+    if ($s < 2592000)  return (int) floor($s / 86400) . 'd';
+    if ($s < 31536000) return (int) floor($s / 2592000) . 'mo';
+    return (int) floor($s / 31536000) . 'y';
+}
+
 /** Compact relative age, e.g. "just now", "3h ago", "5d ago", "2mo ago". */
 function es_ago(?string $ts): string {
     if (!$ts || $ts === '0000-00-00 00:00:00') return '—';

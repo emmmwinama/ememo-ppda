@@ -12,12 +12,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !es_csrf_check()) {
 
 $aid    = (int) ($_POST['analysis_id'] ?? 0);
 $entity = $_POST['entity'] ?? '';
-$op     = $_POST['op'] === 'delete' ? 'delete' : 'save';
+$op     = ($_POST['op'] ?? '') === 'delete' ? 'delete' : 'save';
 $back   = "bid_analysis_evaluate.php?id=$aid";
+$ajax   = ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'fetch';
 
-$a = db_one("SELECT id, stage, current_owner_id FROM es_bid_analysis WHERE id = ?", 'i', [$aid]);
-if (!$a) { flash('Analysis not found.', 'error'); redirect('bid_analysis.php'); }
-if ((int) $a['current_owner_id'] !== $ES_UID || !in_array($a['stage'], ['draft', 'returned'], true)) {
+$a = db_one("SELECT id, stage, officer_id FROM es_bid_analysis WHERE id = ?", 'i', [$aid]);
+if (!$a) {
+    if ($ajax) es_json(['ok' => false, 'error' => 'Analysis not found.'], 404);
+    flash('Analysis not found.', 'error'); redirect('bid_analysis.php');
+}
+if ((int) $a['officer_id'] !== $ES_UID || !in_array($a['stage'], ['draft', 'returned'], true)) {
+    if ($ajax) es_json(['ok' => false, 'error' => 'This analysis can no longer be edited.'], 403);
     flash('This analysis can no longer be edited.', 'error');
     redirect("bid_analysis_view.php?id=$aid");
 }
@@ -25,8 +30,14 @@ if ((int) $a['current_owner_id'] !== $ES_UID || !in_array($a['stage'], ['draft',
 $nInt   = fn($k) => ($_POST[$k] ?? '') !== '' ? (int) $_POST[$k] : null;
 $nStr   = fn($k) => trim($_POST[$k] ?? '') !== '' ? trim($_POST[$k]) : null;
 $nFloat = fn($k) => ($_POST[$k] ?? '') !== '' ? (float) $_POST[$k] : null;
-$fail   = function (string $m) use ($back) { flash($m, 'error'); redirect($back); };
-$ok     = function (string $m) use ($back) { flash($m, 'success'); redirect($back); };
+$fail   = function (string $m) use ($back, $ajax) {
+    if ($ajax) es_json(['ok' => false, 'error' => $m], 422);
+    flash($m, 'error'); redirect($back);
+};
+$ok     = function (string $m, array $extra = []) use ($back, $ajax) {
+    if ($ajax) es_json(['ok' => true, 'message' => $m] + $extra);
+    flash($m, 'success'); redirect($back);
+};
 
 // helper: make sure a bidder belongs to this analysis
 $bidderOk = fn($bid) => $bid && db_one("SELECT id FROM es_bid_bidder WHERE id = ? AND analysis_id = ?", 'ii', [(int) $bid, $aid]);
@@ -142,28 +153,55 @@ case 'technical':
     $st->execute(); $st->close();
     $ok(ucfirst($entity) . ' evaluation saved.');
 
+// ----------------------------------------- PRELIMINARY / POST-QUALIFICATION
+case 'preliminary':
+case 'postqual':
+    $bidderId = (int) ($_POST['bidder_id'] ?? 0);
+    $bRow = $bidderId ? db_one("SELECT id, lot_id FROM es_bid_bidder WHERE id = ? AND analysis_id = ?", 'ii', [$bidderId, $aid]) : null;
+    if (!$bRow) $fail('Unknown bidder.');
+    $table  = $entity === 'preliminary' ? 'es_bid_prelim_eval' : 'es_bid_postqual_eval';
+    $result = in_array($_POST['result'] ?? '', ['pass', 'fail', 'pending'], true) ? $_POST['result'] : 'pending';
+    $remarks = $nStr('remarks');
+    $lotId   = $bRow['lot_id'] !== null ? (int) $bRow['lot_id'] : null;
+    $ex = db_one("SELECT id FROM `$table` WHERE analysis_id = ? AND bidder_id = ? LIMIT 1", 'ii', [$aid, $bidderId]);
+    if ($ex) {
+        $st = $conn->prepare("UPDATE `$table` SET lot_id = ?, result = ?, remarks = ? WHERE id = ?");
+        $st->bind_param('issi', $lotId, $result, $remarks, $ex['id']);
+    } else {
+        $st = $conn->prepare("INSERT INTO `$table` (analysis_id, bidder_id, lot_id, result, remarks) VALUES (?,?,?,?,?)");
+        $st->bind_param('iiiss', $aid, $bidderId, $lotId, $result, $remarks);
+    }
+    $st->execute(); $st->close();
+    $ok(($entity === 'preliminary' ? 'Preliminary' : 'Post-qualification') . ' evaluation saved.');
+
 // ------------------------------------------------------------ LIST ITEM
 case 'list_item':
     $kinds = ['technical_criteria', 'assessment_criteria', 'bid_opening_observation', 'evaluation_observation', 'recommendation', 'post_qualification'];
     $kind  = in_array($_POST['kind'] ?? '', $kinds, true) ? $_POST['kind'] : null;
     if (!$kind) $fail('Unknown list kind.');
     if ($op === 'delete') {
-        $conn->query("DELETE FROM es_bid_list_item WHERE id = " . (int) ($_POST['item_id'] ?? 0) . " AND analysis_id = $aid");
-        $ok('Item removed.');
+        $iid = (int) ($_POST['item_id'] ?? 0);
+        $conn->query("DELETE FROM es_bid_list_item WHERE id = $iid AND analysis_id = $aid");
+        $ok('Item removed.', ['deleted' => $iid]);
     }
     $body = $nStr('body');
     if (!$body) $fail('The item text is empty.');
     $num  = (int) ($_POST['item_number'] ?? 0) ?: 1;
     $iid  = (int) ($_POST['item_id'] ?? 0);
+    $lotId = $nInt('lot_id');
+    if ($lotId && !db_one("SELECT id FROM es_bid_lot WHERE id = ? AND analysis_id = ?", 'ii', [$lotId, $aid])) $lotId = null;
     if ($iid) {
-        $st = $conn->prepare("UPDATE es_bid_list_item SET item_number = ?, body = ? WHERE id = ? AND analysis_id = ? AND kind = ?");
-        $st->bind_param('isiis', $num, $body, $iid, $aid, $kind);
+        $st = $conn->prepare("UPDATE es_bid_list_item SET lot_id = ?, item_number = ?, body = ? WHERE id = ? AND analysis_id = ? AND kind = ?");
+        $st->bind_param('iisiis', $lotId, $num, $body, $iid, $aid, $kind);
+        $st->execute(); $st->close();
     } else {
-        $st = $conn->prepare("INSERT INTO es_bid_list_item (analysis_id, kind, item_number, body) VALUES (?,?,?,?)");
-        $st->bind_param('isis', $aid, $kind, $num, $body);
+        $st = $conn->prepare("INSERT INTO es_bid_list_item (analysis_id, lot_id, kind, item_number, body) VALUES (?,?,?,?,?)");
+        $st->bind_param('iisis', $aid, $lotId, $kind, $num, $body);
+        $st->execute();
+        $iid = (int) $conn->insert_id;
+        $st->close();
     }
-    $st->execute(); $st->close();
-    $ok('Item saved.');
+    $ok('Item saved.', ['id' => $iid, 'body' => $body, 'item_number' => $num, 'kind' => $kind]);
 
 default:
     $fail('Unknown section.');

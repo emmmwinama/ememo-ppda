@@ -27,6 +27,21 @@ $row = db_one(
 );
 if (!$row) { http_response_code(404); exit('Response letter not found.'); }
 
+// ---- access tracking (who views / downloads a published response) --------
+if (!empty($row['published'])) {
+    $act = in_array($fmt, ['txt', 'pdf'], true) ? 'download' : 'view';
+    if ($st = $conn->prepare("INSERT INTO es_response_access (response_id, user_id, action) VALUES (?,?,?)")) {
+        $st->bind_param('iis', $id, $ES_UID, $act);
+        $st->execute();
+        $st->close();
+    }
+    // a download counts as dispatch — stamp sent_* the first time
+    if ($act === 'download' && empty($row['sent_at'])) {
+        $conn->query("UPDATE es_pde_response SET sent_at = NOW(), sent_by = " . (int) $ES_UID
+                   . ", sent_method = 'download' WHERE id = $id AND sent_at IS NULL");
+    }
+}
+
 // who signed it off (last approver on the routing trail)
 $approver = db_one(
     "SELECT u.full_name FROM es_bid_routing t JOIN users u ON u.id = t.from_user_id
@@ -69,6 +84,92 @@ if ($fmt === 'txt') {
     exit;
 }
 
+// ---- formatted PDF (FPDF — no mbstring/gd needed) ----------------------
+if ($fmt === 'pdf') {
+    while (ob_get_level() > 0) ob_end_clean();
+    ini_set('display_errors', '0');
+    error_reporting(0);
+    require_once __DIR__ . '/../ememo/libs/libs/fpdf/fpdf.php';
+
+    // FPDF is windows-1252; fold UTF-8 punctuation down to it
+    $tx = static function ($s): string {
+        $c = @iconv('UTF-8', 'windows-1252//TRANSLIT//IGNORE', (string) $s);
+        return $c === false ? (string) $s : $c;
+    };
+
+    $pdf = new FPDF('P', 'mm', 'A4');
+    $pdf->SetTitle($tx('Response letter ' . $ref));
+    $pdf->SetMargins(25, 22, 25);
+    $pdf->SetAutoPageBreak(true, 20);
+    $pdf->AddPage();
+
+    // letterhead — the shared PPDA memo / letter header image
+    $hdr = __DIR__ . '/assets/img/letterhead.png';
+    if (is_file($hdr)) {
+        $hw = 160;                                       // content width: A4 210 - 25 - 25
+        [$iw, $ih] = getimagesize($hdr) ?: [1705, 545];
+        $pdf->Image($hdr, 25, 12, $hw);
+        $pdf->SetY(12 + $hw * $ih / max($iw, 1) + 8);
+    } else {
+        $pdf->SetFont('Times', 'B', 13);
+        $pdf->MultiCell(0, 6, $tx('PUBLIC PROCUREMENT AND DISPOSAL OF ASSETS AUTHORITY'), 0, 'C');
+        $pdf->Ln(2);
+        $ly = $pdf->GetY();
+        $pdf->SetLineWidth(0.4);
+        $pdf->Line(25, $ly, 185, $ly);
+        $pdf->Ln(7);
+    }
+
+    // our ref / your ref (left)  +  date (right, same top)
+    $pdf->SetFont('Times', '', 11);
+    $topY = $pdf->GetY();
+    $pdf->MultiCell(110, 6, $tx('Our Ref: ' . $ref . ($row['ref_code_pde'] ? "\nYour Ref: " . $row['ref_code_pde'] : '')), 0, 'L');
+    $afterY = $pdf->GetY();
+    $pdf->SetXY(135, $topY);
+    $pdf->Cell(50, 6, $tx('Date: ' . $letterDate), 0, 1, 'R');
+    $pdf->SetY(max($afterY, $topY + 6));
+    $pdf->Ln(6);
+
+    // addressee
+    $addr = 'The Head of Procuring & Disposing Entity';
+    if (trim((string) $row['pde_name']) !== '')    $addr .= "\n" . $row['pde_name'];
+    if (trim((string) $row['pde_address']) !== '') $addr .= "\n" . $row['pde_address'];
+    $pdf->MultiCell(0, 6, $tx($addr), 0, 'L');
+    $pdf->Ln(4);
+    $pdf->Cell(0, 6, $tx('Dear Sir/Madam,'), 0, 1, 'L');
+    $pdf->Ln(3);
+
+    // subject
+    $pdf->SetFont('Times', 'BU', 11);
+    $pdf->MultiCell(0, 6, $tx('RE: ' . strtoupper((string) $row['subject'])), 0, 'C');
+    if (trim((string) $row['tender_number']) !== '') {
+        $pdf->SetFont('Times', '', 10);
+        $pdf->MultiCell(0, 5, $tx('Tender No: ' . $row['tender_number']), 0, 'C');
+    }
+    $pdf->Ln(4);
+
+    // body — one justified block per paragraph
+    $pdf->SetFont('Times', '', 11);
+    foreach (preg_split('/\n{2,}/', trim((string) $row['body'])) as $para) {
+        $para = trim((string) $para);
+        if ($para === '') continue;
+        $pdf->MultiCell(0, 6, $tx($para), 0, 'J');
+        $pdf->Ln(3);
+    }
+
+    // sign-off
+    $pdf->Ln(6);
+    $pdf->Cell(0, 6, $tx('Yours faithfully,'), 0, 1, 'L');
+    $pdf->Ln(16);
+    $pdf->SetFont('Times', 'B', 11);
+    $pdf->Cell(0, 6, $tx($signName), 0, 1, 'L');
+    $pdf->SetFont('Times', '', 11);
+    $pdf->Cell(0, 6, $tx('for DIRECTOR GENERAL'), 0, 1, 'L');
+
+    $pdf->Output('D', 'response-' . preg_replace('/[^A-Za-z0-9]+/', '-', $ref) . '.pdf');
+    exit;
+}
+
 // ---- printable HTML letter -------------------------------------------
 ?>
 <!doctype html>
@@ -87,6 +188,7 @@ if ($fmt === 'txt') {
     .sheet { max-width: 820px; margin: 1.5rem auto; background: #fff; padding: 56px 64px;
              box-shadow: 0 1px 6px rgba(0,0,0,.12); line-height: 1.7; }
     .lh { text-align: center; margin-bottom: 28px; }
+    .lh img { width: 100%; display: block; }
     .lh h1 { font-size: 15pt; margin: 0; letter-spacing: .5px; }
     .lh p { margin: 2px 0 0; font-size: 9.5pt; color: #555; }
     .meta { display: flex; justify-content: space-between; font-size: 10.5pt; margin: 22px 0 18px; }
@@ -105,15 +207,15 @@ if ($fmt === 'txt') {
 </head>
 <body>
   <div class="bar">
-    <button class="primary" onclick="window.print()">Print / Save as PDF</button>
-    <a href="?id=<?= (int) $id ?>&amp;format=txt">Download .txt</a>
+    <a class="primary" href="?id=<?= (int) $id ?>&amp;format=pdf">Download PDF</a>
+    <button onclick="window.print()">Print</button>
+    <a href="?id=<?= (int) $id ?>&amp;format=txt">Plain text</a>
     <a href="javascript:history.back()">Back</a>
   </div>
 
   <div class="sheet">
     <div class="lh">
-      <h1>Public Procurement and Disposal of Assets Authority</h1>
-      <p>Private Bag 383, Lilongwe 3, Malawi &nbsp;·&nbsp; www.ppda.mw</p>
+      <img src="assets/img/letterhead.png" alt="Public Procurement and Disposal of Assets Authority">
     </div>
 
     <div class="meta">

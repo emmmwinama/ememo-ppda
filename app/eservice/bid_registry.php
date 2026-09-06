@@ -207,7 +207,7 @@ es_layout_head('Submissions', 'registry');
 <?php if (!$rows): ?>
   <div class="f-state"><i class="bi bi-journal"></i><p>No submissions match<?= $hasFilter ? ' these filters' : '' ?>.</p></div>
 <?php else: ?>
-  <div class="f-list">
+  <div class="d-flex flex-column gap-3">
     <?php foreach ($rows as $r):
         $viewUrl  = 'bid_registry_view.php?id=' . (int) $r['id'];
         $isReturn = $r['status'] === 'returned_to_pde';
@@ -220,48 +220,50 @@ es_layout_head('Submissions', 'registry');
         } else {
             [$ageWord, $ageTs] = ['submitted', $r['ts_create']];
         }
+        $nTypes = count(array_filter(explode(',', (string) $r['accompanied_documents'])));
     ?>
-      <div class="f-listrow" style="--rail:<?= $RAIL[$r['status']] ?? 'transparent' ?>;">
-        <div class="f-listrow-main">
-          <div class="f-listrow-title"><?= e($isPde ? $r['subject'] : ($r['pde_name'] ?? '—')) ?></div>
-          <?php if (!$isPde): ?>
-            <div class="f-listrow-sub"><?= e($r['subject']) ?></div>
-          <?php endif; ?>
-          <div class="f-listrow-meta">
-            <span class="font-monospace"><?= e($r['serial_no']) ?></span>
-            <?php if ($r['tender_number']): ?><span class="sep">·</span><span><?= e($r['tender_number']) ?></span><?php endif; ?>
-            <?php if ($r['ref_code_pde']): ?><span class="sep">·</span><span>PDE ref <?= e($r['ref_code_pde']) ?></span><?php endif; ?>
-            <?php if ($r['method_name']): ?><span class="sep">·</span><span><?= e($r['method_name']) ?></span><?php endif; ?>
-            <?php if ($r['received_name']): ?><span class="sep">·</span><span>by <?= e($r['received_name']) ?></span><?php endif; ?>
-          </div>
-          <?php if ($r['officer_name']): ?>
-            <div class="f-listrow-meta"><i class="bi bi-person-badge"></i> Officer: <?= e($r['officer_name']) ?></div>
-          <?php endif; ?>
-          <?php if (in_array($r['status'], ['returned_to_pde', 'pending_allocation'], true) && trim((string) $r['registry_comment']) !== ''): ?>
-            <div class="f-listrow-note <?= $isReturn ? 'is-return' : '' ?>">
-              <strong><?= $isReturn ? 'Returned:' : 'Registry note:' ?></strong> <?= e($r['registry_comment']) ?>
+      <div class="f-panel rec">
+        <div class="rec-head">
+          <div class="rec-headmain">
+            <div class="rec-title"><?= e($isPde ? $r['subject'] : ($r['pde_name'] ?? '—')) ?></div>
+            <?php if (!$isPde): ?><div class="rec-meta" style="margin-top:.1rem;"><?= e($r['subject']) ?></div><?php endif; ?>
+            <div class="rec-meta">
+              <span class="font-monospace"><?= e($r['serial_no']) ?></span>
+              <?php if ($r['tender_number']): ?><span class="sep">·</span><span><?= e($r['tender_number']) ?></span><?php endif; ?>
+              <?php if ($r['ref_code_pde']): ?><span class="sep">·</span><span>PDE ref <?= e($r['ref_code_pde']) ?></span><?php endif; ?>
+              <?php if ($r['method_name']): ?><span class="sep">·</span><span><?= e($r['method_name']) ?></span><?php endif; ?>
+              <?php if ($r['officer_name']): ?><span class="sep">·</span><span>Officer: <?= e($r['officer_name']) ?></span><?php endif; ?>
             </div>
-          <?php endif; ?>
+          </div>
+          <div class="rec-badges">
+            <?= es_status_badge($r['status']) ?>
+            <?= es_source_badge($r['origin']) ?>
+            <?= es_priority_badge($r['importance']) ?>
+          </div>
         </div>
 
-        <div class="f-listrow-rail">
-          <?= es_status_badge($r['status']) ?>
-          <?= es_source_badge($r['origin']) ?>
-          <?= es_priority_badge($r['importance']) ?>
-          <?php $nTypes = count(array_filter(explode(',', (string) $r['accompanied_documents']))); ?>
-          <span class="f-count" title="Document types declared in the pack"><i class="bi bi-list-check"></i><?= $nTypes ?>/10 types</span>
-          <span class="f-count" title="Files uploaded"><i class="bi bi-paperclip"></i><?= (int) $r['doc_count'] ?> file<?= (int) $r['doc_count'] === 1 ? '' : 's' ?></span>
-          <span class="f-agechip"><?= $ageWord ?> <?= e(es_ago($ageTs)) ?></span>
+        <?php if (in_array($r['status'], ['returned_to_pde', 'pending_allocation'], true) && trim((string) $r['registry_comment']) !== ''): ?>
+          <div class="rec-note <?= $isReturn ? 'is-return' : '' ?>">
+            <strong><?= $isReturn ? 'Returned:' : 'Registry note:' ?></strong> <?= e($r['registry_comment']) ?>
+          </div>
+        <?php endif; ?>
+
+        <div class="rec-metrics">
+          <span><b><?= $nTypes ?></b>/10 doc types</span>
+          <span class="sep">·</span>
+          <span><b><?= (int) $r['doc_count'] ?></b> file<?= (int) $r['doc_count'] === 1 ? '' : 's' ?></span>
+          <span class="sep">·</span>
+          <span><?= $ageWord ?> <b><?= e(es_ago($ageTs)) ?></b></span>
         </div>
 
-        <div class="f-listrow-actions">
-          <?php if ($r['response_id']): ?>
-            <a href="response_letter.php?id=<?= (int) $r['response_id'] ?>" class="btn btn-sm btn-outline-success" title="Response letter" target="_blank"><i class="bi bi-file-earmark-arrow-down"></i></a>
-          <?php endif; ?>
+        <div class="rec-actions">
           <?php if (!$isPde && $canCheck && $r['status'] === 'pending_registry'): ?>
-            <a href="<?= $viewUrl ?>#act" class="btn btn-sm btn-success" title="Registry check"><i class="bi bi-check2-square"></i></a>
+            <a href="<?= $viewUrl ?>#act" class="btn btn-sm btn-success"><i class="bi bi-check2-square me-1"></i>Registry check</a>
           <?php endif; ?>
-          <a href="<?= $viewUrl ?>" class="btn btn-sm btn-outline-secondary" title="Open"><i class="bi bi-eye"></i></a>
+          <?php if ($r['response_id']): ?>
+            <a href="response_letter.php?id=<?= (int) $r['response_id'] ?>" class="btn btn-sm btn-outline-success" target="_blank"><i class="bi bi-file-earmark-arrow-down me-1"></i>Response letter</a>
+          <?php endif; ?>
+          <a href="<?= $viewUrl ?>" class="btn btn-sm btn-outline-secondary">Open</a>
         </div>
       </div>
     <?php endforeach; ?>

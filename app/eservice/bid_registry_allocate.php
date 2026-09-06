@@ -13,10 +13,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !es_csrf_check()) {
 $id        = (int) ($_POST['id'] ?? 0);
 $officerId = (int) ($_POST['officer_id'] ?? 0);
 $comment   = trim($_POST['comment'] ?? '');
+$newPrio   = in_array($_POST['importance'] ?? '', ['normal', 'high', 'urgent'], true) ? $_POST['importance'] : null;
 $back      = ($_POST['from'] ?? '') === 'allocations' ? 'bid_allocations.php' : "bid_registry_view.php?id=$id";
 
-$r = db_one("SELECT id, status FROM es_bid_registry WHERE id = ?", 'i', [$id]);
+$r = db_one("SELECT id, status, importance FROM es_bid_registry WHERE id = ?", 'i', [$id]);
 if (!$r) { flash('Submission not found.', 'error'); redirect('bid_registry.php'); }
+$prioChanged = $newPrio !== null && es_can('submission.reprioritise') && $newPrio !== $r['importance'];
 if ($r['status'] !== 'pending_allocation') {
     flash('This submission is not awaiting allocation.', 'error');
     redirect($back);
@@ -28,6 +30,7 @@ $isOfficer = $officerId && db_one(
 if (!$isOfficer) { flash('Pick a technical officer.', 'error'); redirect($back); }
 
 $note = $comment !== '' ? $comment : null;
+if ($prioChanged) $note = ($note ? $note . ' — ' : '') . 'priority set to ' . $newPrio;
 
 $conn->begin_transaction();
 try {
@@ -39,6 +42,13 @@ try {
     $st->bind_param('iii', $officerId, $ES_UID, $id);
     $st->execute();
     $st->close();
+
+    if ($prioChanged) {
+        $st = $conn->prepare("UPDATE es_bid_registry SET importance = ? WHERE id = ?");
+        $st->bind_param('si', $newPrio, $id);
+        $st->execute();
+        $st->close();
+    }
 
     $st = $conn->prepare(
         "INSERT INTO es_bid_allocation (registry_id, action, to_officer_id, by_user_id, reason)

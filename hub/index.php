@@ -112,9 +112,18 @@ $user = htmlspecialchars($_SESSION['username']);
   <!-- Bootstrap JS Bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // Launch an application
+    // Work out the deployment base from this page's own URL. The hub may be
+    // reached as  <base>/ , <base>/index.php , or <base>/hub/index.php  (a root
+    // .htaccess maps <base>/ -> hub/index.php), so strip any trailing file,
+    // "/hub", and slash. Apps live at <base>/app/<app>/index.php.
+    function hubBase() {
+      var b = window.location.pathname;
+      b = b.replace(/\/(hub\/)?[^\/?#]*\.[^\/?#]*$/, '');  // drop "/[hub/]file.ext"
+      b = b.replace(/\/hub\/?$/, '');                       // drop trailing "/hub" or "/hub/"
+      return b.replace(/\/$/, '');                          // drop trailing "/"
+    }
     function launchApp(app) {
-      window.location.href = `../app/${app}/index.php`;
+      window.location.href = hubBase() + '/app/' + encodeURIComponent(app) + '/index.php';
     }
 
     // Handle logout

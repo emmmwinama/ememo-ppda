@@ -1,7 +1,7 @@
 <?php
 /** Bid analysis — post a discussion comment. */
 require __DIR__ . '/inc/bootstrap.php';
-es_require_role('officer', 'supervisor', 'director', 'dg', 'board');
+es_require_perm('analysis.comment');
 
 global $conn, $ES_UID;
 

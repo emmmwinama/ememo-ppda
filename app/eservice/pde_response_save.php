@@ -12,11 +12,22 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !es_csrf_check()) {
 
 $aid    = (int) ($_POST['analysis_id'] ?? 0);
 $body   = trim($_POST['body'] ?? '');
-$action = $_POST['action'] === 'publish' ? 'publish' : 'draft';
+$action = ($_POST['action'] ?? '') === 'publish' ? 'publish' : 'draft';
+$from   = $_POST['from'] ?? '';
+$back   = match ($from) {
+    'responses' => 'bid_responses.php?tab=' . ($action === 'publish' ? 'published' : 'unpublished'),
+    'dgreview'  => 'bid_review.php?role=dg&tab=' . rawurlencode($_POST['dg_tab'] ?? 'inbox'),
+    default     => "bid_analysis_view.php?id=$aid",
+};
+
+if ($action === 'publish' && !es_can('response.publish')) {
+    flash('You can draft the letter, but publishing it needs the response.publish permission.', 'error');
+    redirect($back);
+}
 
 $a = db_one("SELECT id FROM es_bid_analysis WHERE id = ?", 'i', [$aid]);
 if (!$a) { flash('Analysis not found.', 'error'); redirect('bid_analysis.php'); }
-if ($body === '') { flash('The letter body is empty.', 'error'); redirect("bid_analysis_view.php?id=$aid"); }
+if ($body === '') { flash('The letter body is empty.', 'error'); redirect($back); }
 
 $existing  = db_one("SELECT id FROM es_pde_response WHERE analysis_id = ? ORDER BY id DESC LIMIT 1", 'i', [$aid]);
 $published = $action === 'publish' ? 1 : 0;
@@ -44,4 +55,4 @@ if ($existing) {
 }
 
 flash($published ? 'Response letter published.' : 'Response letter saved as draft.', 'success');
-redirect("bid_analysis_view.php?id=$aid");
+redirect($back);

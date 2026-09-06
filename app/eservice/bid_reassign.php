@@ -3,7 +3,7 @@
  *  Records the move (from → to, who, why, when) on the submission's allocation trail
  *  and, if an analysis has started, on the analysis routing trail too. */
 require __DIR__ . '/inc/bootstrap.php';
-es_require_perm('submission.allocate');
+es_require_perm('submission.reassign');
 
 global $conn, $ES_UID;
 
@@ -12,13 +12,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !es_csrf_check()) {
     redirect('bid_allocations.php?tab=allocated');
 }
 
-$id     = (int) ($_POST['id'] ?? 0);
-$newId  = (int) ($_POST['officer_id'] ?? 0);
-$reason = trim($_POST['reason'] ?? '');
-$back   = 'bid_allocations.php?tab=allocated';
+$id      = (int) ($_POST['id'] ?? 0);
+$newId   = (int) ($_POST['officer_id'] ?? 0);
+$reason  = trim($_POST['reason'] ?? '');
+$newPrio = in_array($_POST['importance'] ?? '', ['normal', 'high', 'urgent'], true) ? $_POST['importance'] : null;
+$back    = 'bid_allocations.php?tab=allocated';
 
-$r = db_one("SELECT id, status, assigned_officer_id FROM es_bid_registry WHERE id = ?", 'i', [$id]);
+$r = db_one("SELECT id, status, assigned_officer_id, importance FROM es_bid_registry WHERE id = ?", 'i', [$id]);
 if (!$r) { flash('Submission not found.', 'error'); redirect($back); }
+$prioChanged = $newPrio !== null && es_can('submission.reprioritise') && $newPrio !== $r['importance'];
 if (!in_array($r['status'], ['assigned', 'in_analysis'], true)) {
     flash('Only an allocated submission that has not been completed can be reassigned.', 'error');
     redirect("bid_registry_view.php?id=$id");
@@ -27,6 +29,7 @@ if (!in_array($r['status'], ['assigned', 'in_analysis'], true)) {
 $oldId = (int) $r['assigned_officer_id'];
 if ($newId === $oldId) { flash('That is already the assigned officer.', 'error'); redirect($back); }
 if ($reason === '')    { flash('Give a reason for the reassignment.', 'error'); redirect($back); }
+if ($prioChanged) $reason .= ' — priority set to ' . $newPrio;
 
 $isOfficer = $newId && db_one(
     "SELECT 1 x FROM es_user_role WHERE user_id = ? AND role = 'officer' LIMIT 1", 'i', [$newId]
@@ -45,6 +48,13 @@ try {
     $st->bind_param('iii', $newId, $ES_UID, $id);
     $st->execute();
     $st->close();
+
+    if ($prioChanged) {
+        $st = $conn->prepare("UPDATE es_bid_registry SET importance = ? WHERE id = ?");
+        $st->bind_param('si', $newPrio, $id);
+        $st->execute();
+        $st->close();
+    }
 
     $st = $conn->prepare(
         "INSERT INTO es_bid_allocation (registry_id, action, from_officer_id, to_officer_id, by_user_id, reason)

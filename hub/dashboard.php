@@ -21,7 +21,7 @@
   <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
     <div class="container">
       <a class="navbar-brand" href="#"><img src="logo.jpg" alt="PPDA" style="height:32px;"></a>
-      <span class="navbar-text ms-2 fw-semibold text-success">Welcome, <?php echo htmlspecialchars(\$_SESSION['username']); ?></span>
+      <span class="navbar-text ms-2 fw-semibold text-success">Welcome, <?php echo htmlspecialchars($_SESSION['username'] ?? ''); ?></span>
       <div class="ms-auto">
         <button id="logoutBtn" class="btn btn-outline-secondary btn-sm">Logout</button>
       </div>
@@ -64,12 +64,19 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    function launchApp(app) {
-      window.location.href = `/app/${app}/index.php`;
+    function hubBase() {
+      var b = window.location.pathname;
+      b = b.replace(/\/(hub\/)?[^\/?#]*\.[^\/?#]*$/, '');
+      b = b.replace(/\/hub\/?$/, '');
+      return b.replace(/\/$/, '');
     }
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      fetch('/auth/logout.php', { method: 'POST', credentials: 'include' })
-        .then(() => window.location.href = '/login.php');
+    function launchApp(app) {
+      window.location.href = hubBase() + '/app/' + encodeURIComponent(app) + '/index.php';
+    }
+    var _btn = document.getElementById('logoutBtn');
+    if (_btn) _btn.addEventListener('click', () => {
+      fetch(hubBase() + '/hub/logout.php', { method: 'POST', credentials: 'include' })
+        .then(() => window.location.href = hubBase() + '/hub/login.php');
     });
   </script>
 </body>

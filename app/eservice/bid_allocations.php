@@ -8,6 +8,9 @@ es_require_perm('submission.allocate');
 
 global $conn, $ES_UID;
 
+$canPrio     = es_can('submission.reprioritise');   // re-set a submission's priority while allocating
+$canReassign = es_can('submission.reassign');
+
 $tab   = ($_GET['tab'] ?? 'new') === 'allocated' ? 'allocated' : 'new';
 $q     = trim($_GET['q'] ?? '');
 $fPrio = in_array($_GET['prio'] ?? '', ['normal', 'high', 'urgent'], true) ? $_GET['prio'] : '';
@@ -223,13 +226,28 @@ es_layout_head('Allocations', 'allocations');
                 <?php foreach ($officers as $o): ?><option value="<?= (int) $o['id'] ?>"><?= e($o['full_name']) ?></option><?php endforeach; ?>
               </select>
             </div>
+            <?php if ($canPrio): ?>
+              <div class="fld">
+                <label>Priority</label>
+                <select name="importance" class="form-select form-select-sm">
+                  <?php foreach (['normal' => 'Normal', 'high' => 'High', 'urgent' => 'Urgent'] as $pk => $pl): ?>
+                    <option value="<?= $pk ?>" <?= $r['importance'] === $pk ? 'selected' : '' ?>><?= $pl ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+            <?php endif; ?>
             <div class="fld fld--wide">
               <label>Instruction <span class="text-muted">(optional)</span></label>
               <input type="text" name="comment" class="form-control form-control-sm" placeholder="e.g. lead the prior-review team">
             </div>
             <button class="btn btn-success btn-sm" <?= $officers ? '' : 'disabled' ?>><i class="bi bi-send me-1"></i>Allocate</button>
-            <a href="bid_registry_view.php?id=<?= (int) $r['id'] ?>" class="btn btn-link btn-sm text-decoration-none px-1">Open</a>
+            <?= es_submission_button((int) $r['id'], $r['serial_no'], 'View', 'btn btn-link btn-sm text-decoration-none px-1') ?>
           </form>
+        <?php elseif (!$canReassign): ?>
+          <div class="rec-actions">
+            <span class="text-muted small">You don't have permission to reassign.</span>
+            <?= es_submission_button((int) $r['id'], $r['serial_no'], 'View', 'btn btn-link btn-sm text-decoration-none px-1') ?>
+          </div>
         <?php else: ?>
           <form method="post" action="bid_reassign.php" class="rec-actions">
             <input type="hidden" name="_csrf" value="<?= e(es_csrf_token()) ?>">
@@ -243,12 +261,22 @@ es_layout_head('Allocations', 'allocations');
                 <?php endforeach; ?>
               </select>
             </div>
+            <?php if ($canPrio): ?>
+              <div class="fld">
+                <label>Priority</label>
+                <select name="importance" class="form-select form-select-sm">
+                  <?php foreach (['normal' => 'Normal', 'high' => 'High', 'urgent' => 'Urgent'] as $pk => $pl): ?>
+                    <option value="<?= $pk ?>" <?= $r['importance'] === $pk ? 'selected' : '' ?>><?= $pl ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+            <?php endif; ?>
             <div class="fld fld--wide">
               <label>Reason <span class="text-muted">(required)</span></label>
               <input type="text" name="reason" class="form-control form-control-sm" required placeholder="Why is it moving?">
             </div>
             <button class="btn btn-outline-primary btn-sm"><i class="bi bi-shuffle me-1"></i>Reassign</button>
-            <a href="bid_registry_view.php?id=<?= (int) $r['id'] ?>" class="btn btn-link btn-sm text-decoration-none px-1">Open</a>
+            <?= es_submission_button((int) $r['id'], $r['serial_no'], 'View', 'btn btn-link btn-sm text-decoration-none px-1') ?>
           </form>
         <?php endif; ?>
       </div>

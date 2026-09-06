@@ -1,46 +1,48 @@
-<?php require_once 'auth.php'; ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Admin – User & Group Management</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<?php
+// admin_user_manage.php — rendered inside index.php (header.php loads Bootstrap, Icons, theme.css)
+require_once 'auth.php';
+?>
+<!-- SweetAlert2 (not provided by header.php) -->
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+<style>
+  .admin-tabs { display: flex; gap: .5rem; margin-bottom: 1.2rem; border: none; }
+  .admin-tabs .nav-link {
+    border: 1px solid var(--border); background: var(--surface);
+    border-radius: var(--radius-pill);
+    padding: .35rem .95rem; font-size: .82rem; font-weight: 600; color: var(--muted);
+  }
+  .admin-tabs .nav-link:hover { color: var(--text); border-color: var(--border-strong, #cbd5e1); }
+  .admin-tabs .nav-link.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+</style>
 
-  <!-- Bootstrap & SweetAlert2 CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-</head>
-<body>
-<div class="container-fluid mt-4">
-  <h4 class="mb-4">Admin Management</h4>
+<div class="f-head">
+  <h1 class="f-title">User Management</h1>
+  <p class="f-subtitle">Manage users and permission groups</p>
+</div>
 
-  <!-- Nav Tabs -->
-  <ul class="nav nav-tabs" id="adminTabs" role="tablist">
-    <li class="nav-item" role="presentation">
-      <button class="nav-link active" id="tab-users" data-bs-toggle="tab" data-bs-target="#usersTab" type="button" role="tab">Users</button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="tab-groups" data-bs-toggle="tab" data-bs-target="#groupsTab" type="button" role="tab">Groups</button>
-    </li>
-  </ul>
+<ul class="nav admin-tabs" id="adminTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="tab-users" data-bs-toggle="tab" data-bs-target="#usersTab" type="button" role="tab">
+      <i class="bi bi-people me-1"></i>Users
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="tab-groups" data-bs-toggle="tab" data-bs-target="#groupsTab" type="button" role="tab">
+      <i class="bi bi-diagram-3 me-1"></i>Groups
+    </button>
+  </li>
+</ul>
 
-  <!-- Tab Content -->
-  <div class="tab-content mt-3">
-    <div class="tab-pane fade show active" id="usersTab" role="tabpanel" aria-labelledby="tab-users">
-      <?php include 'user_management.php'; ?>
-    </div>
-    <div class="tab-pane fade" id="groupsTab" role="tabpanel" aria-labelledby="tab-groups">
-      <?php include 'group_management.php'; ?>
-    </div>
+<div class="tab-content">
+  <div class="tab-pane fade show active" id="usersTab" role="tabpanel" aria-labelledby="tab-users">
+    <?php include 'user_management.php'; ?>
+  </div>
+  <div class="tab-pane fade" id="groupsTab" role="tabpanel" aria-labelledby="tab-groups">
+    <?php include 'group_management.php'; ?>
   </div>
 </div>
 
-<!-- Modals -->
 <?php include 'shared_modals.php'; ?>
 
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="management_logic.js"></script>
-</body>
-</html>

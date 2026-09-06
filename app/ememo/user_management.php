@@ -1,7 +1,5 @@
 <!-- User Management Section -->
-<h4 class="mb-4">User Management</h4>
-
-<form id="createUserForm" class="card p-4 shadow-sm border-0 mb-4">
+<form id="createUserForm" class="f-panel p-4 mb-4">
   <div class="row g-3 mb-3">
     <div class="col-md-3">
       <input name="full_name" class="form-control" placeholder="Full Name" required>
@@ -61,8 +59,8 @@
   </div>
 </form>
 
-<div class="card p-3 shadow-sm border-0">
-  <table class="table table-hover align-middle" id="userTable">
+<div class="f-panel table-responsive">
+  <table class="table table-borderless f-table align-middle mb-0" id="userTable">
     <thead>
       <tr>
         <th>Name</th>

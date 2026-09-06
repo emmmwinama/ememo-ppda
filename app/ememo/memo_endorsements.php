@@ -1,202 +1,138 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Memo Endorsements</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
+<?php
+// memo_endorsements.php — rendered inside index.php (header.php loads Bootstrap, Icons, theme.css)
+?>
+<style>
+  .endo-list { display: flex; flex-direction: column; gap: .75rem; }
+  .endo-card { text-decoration: none; color: inherit; }
+  .endo-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: .4rem; }
+  .endo-stage { font-size: .78rem; color: var(--muted); }
+  .endo-subject { font-weight: 700; color: var(--text); line-height: 1.35; }
+  .endo-meta { font-size: .82rem; color: var(--muted); margin-top: .25rem; display: flex; flex-wrap: wrap; gap: .15rem .6rem; }
+  .endo-meta .bi { margin-right: .2rem; }
+  .endo-callout {
+    margin-top: .7rem; padding: .6rem .8rem;
+    background: #fdefda; border: 1px solid #f3ddb6; border-radius: var(--radius-md);
+    font-size: .82rem; color: var(--text);
+  }
+  .endo-callout strong { color: #b45309; }
+</style>
 
-<div class="container-fluid px-0">
-  <div class="row">
-    <div class="col-12">
-      <div class="mb-4">
-        <input type="text" id="endorsementSearch" class="form-control form-control-lg" placeholder="Search endorsements...">
-      </div>
-
-     <ul class="nav nav-tabs mb-4" id="endorsementTabs" role="tablist">
-  <li class="nav-item" role="presentation">
-    <button class="nav-link active" id="tab-new-tab" data-bs-toggle="tab" data-bs-target="#tab-new" type="button" role="tab" aria-controls="tab-new" aria-selected="true">
-      New Requests <span class="badge bg-secondary">0</span>
-    </button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-endorsed-tab" data-bs-toggle="tab" data-bs-target="#tab-endorsed" type="button" role="tab" aria-controls="tab-endorsed" aria-selected="false">
-      Endorsed <span class="badge bg-info">0</span>
-    </button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-returned-tab" data-bs-toggle="tab" data-bs-target="#tab-returned" type="button" role="tab" aria-controls="tab-returned" aria-selected="false">
-      Returned <span class="badge bg-danger">0</span>
-    </button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-escalated-tab" data-bs-toggle="tab" data-bs-target="#tab-escalated" type="button" role="tab" aria-controls="tab-escalated" aria-selected="false">
-      Escalations <span class="badge bg-warning">0</span>
-    </button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-approved-tab" data-bs-toggle="tab" data-bs-target="#tab-approved" type="button" role="tab" aria-controls="tab-approved" aria-selected="false">
-      Approved <span class="badge bg-success">0</span>
-    </button>
-  </li>
-  <li class="nav-item" role="presentation">
-    <button class="nav-link" id="tab-rejected-tab" data-bs-toggle="tab" data-bs-target="#tab-rejected" type="button" role="tab" aria-controls="tab-rejected" aria-selected="false">
-      Rejected <span class="badge bg-danger">0</span>
-    </button>
-  </li>
-</ul>
-
-<!-- ✅ All tab contents here correctly -->
-<div class="tab-content" id="endorsementTabsContent">
-  <div class="tab-pane fade show active" id="tab-new" role="tabpanel" aria-labelledby="tab-new-tab">
-    <div class="list-group" id="list-new"></div>
-  </div>
-  <div class="tab-pane fade" id="tab-endorsed" role="tabpanel" aria-labelledby="tab-endorsed-tab">
-    <div class="list-group" id="list-endorsed"></div>
-  </div>
-  <div class="tab-pane fade" id="tab-returned" role="tabpanel" aria-labelledby="tab-returned-tab">
-    <div class="list-group" id="list-returned"></div>
-  </div>
-  <div class="tab-pane fade" id="tab-escalated" role="tabpanel" aria-labelledby="tab-escalated-tab">
-    <div class="list-group" id="list-escalated"></div>
-  </div>
-  <div class="tab-pane fade" id="tab-approved" role="tabpanel" aria-labelledby="tab-approved-tab">
-    <div class="list-group" id="list-approved"></div>
-  </div>
-  <div class="tab-pane fade" id="tab-rejected" role="tabpanel" aria-labelledby="tab-rejected-tab">
-    <div class="list-group" id="list-rejected"></div>
-  </div>
+<div class="f-head">
+  <h1 class="f-title">Endorsements</h1>
+  <p class="f-subtitle">Memos routed to you for endorsement</p>
 </div>
 
-
-      <div class="text-center mt-4">
-        <div class="spinner-border text-primary d-none" id="loadingSpinner"></div>
-      </div>
-    </div>
+<div class="f-toolbar">
+  <div class="f-search">
+    <i class="bi bi-search"></i>
+    <input type="text" id="endorsementSearch" placeholder="Search by subject, reference or sender…" autocomplete="off">
   </div>
+  <div class="spinner-border spinner-border-sm text-secondary d-none align-self-center" id="loadingSpinner"></div>
 </div>
 
-<!-- Bootstrap Bundle with Popper -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<div class="f-chips" id="endoChips">
+  <button class="chip active" data-status="pending">New requests <span class="chip-count" data-c="pending">0</span></button>
+  <button class="chip" data-status="endorsed">Endorsed <span class="chip-count" data-c="endorsed">0</span></button>
+  <button class="chip" data-status="returned">Returned <span class="chip-count" data-c="returned">0</span></button>
+  <button class="chip" data-status="escalated">Escalations <span class="chip-count" data-c="escalated">0</span></button>
+  <button class="chip" data-status="approved">Approved <span class="chip-count" data-c="approved">0</span></button>
+  <button class="chip" data-status="rejected">Rejected <span class="chip-count" data-c="rejected">0</span></button>
+</div>
+
+<div class="endo-list" id="endoList"></div>
+<div class="f-state" id="endoEmpty" hidden><i class="bi bi-hand-thumbs-up"></i><p>Nothing in this view.</p></div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  loadEndorsements();
-  document.getElementById('endorsementSearch').addEventListener('input', filterEndorsements);
-
-  setInterval(() => {
-    if (document.getElementById('endorsementSearch').value.trim() === '') {
-      loadEndorsements();
-    }
-  }, 30000);
-});
-
-let allEndorsements = [];
-
-function loadEndorsements() {
-  const spinner = document.getElementById('loadingSpinner');
-  spinner.classList.remove('d-none');
-
-  fetch('get_endorsements.php')
-    .then(res => res.json())
-    .then(data => {
-      spinner.classList.add('d-none');
-      if (data.status !== 'success') return;
-
-      if (JSON.stringify(allEndorsements) !== JSON.stringify(data.data)) {
-        allEndorsements = data.data;
-        renderEndorsements(allEndorsements);
-      }
-    })
-    .catch(err => {
-      spinner.classList.add('d-none');
-      console.error("Error loading endorsements: " + err.message);
-    });
-}
-
-function renderEndorsements(items) {
-  const tabs = {
-    'pending': { el: document.getElementById('list-new'), badge: 'tab-new', count: 0 },
-    'endorsed': { el: document.getElementById('list-endorsed'), badge: 'tab-endorsed', count: 0 },
-    'escalated': { el: document.getElementById('list-escalated'), badge: 'tab-escalated', count: 0 },
-    'approved': { el: document.getElementById('list-approved'), badge: 'tab-approved', count: 0 },
-    'rejected': { el: document.getElementById('list-rejected'), badge: 'tab-rejected', count: 0 },
-    'returned': { el: document.getElementById('list-returned'), badge: 'tab-returned', count: 0 }, // ✅ Add Returned tab properly
+(() => {
+  const TINT = {
+    pending: 't-neutral', endorsed: 't-sky', returned: 't-rose',
+    escalated: 't-amber', approved: 't-green', rejected: 't-rose',
   };
+  const STATUSES = Object.keys(TINT);
+  const state = { status: 'pending', q: '' };
+  let all = [];
 
-  // Clear all tabs first
-  Object.values(tabs).forEach(t => t.el.innerHTML = '');
+  const list  = document.getElementById('endoList');
+  const empty = document.getElementById('endoEmpty');
+  const spin  = document.getElementById('loadingSpinner');
 
-  items.forEach(item => {
-    let status = item.endorsement_status?.trim().toLowerCase() || 'pending'; 
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => (
+    { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+  const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
-    if (item.memo_status && item.memo_status.toLowerCase() === 'returned') {
-      status = 'returned';
-    }
+  function statusOf(item) {
+    let s = (item.endorsement_status || 'pending').trim().toLowerCase();
+    if ((item.memo_status || '').toLowerCase() === 'returned') s = 'returned';
+    return STATUSES.includes(s) ? s : 'pending';
+  }
 
-    const tab = tabs[status];
-    if (!tab) return;
+  function matchesSearch(item) {
+    if (!state.q) return true;
+    const q = state.q.toLowerCase();
+    return (item.subject || '').toLowerCase().includes(q)
+        || (item.memo_id || '').toLowerCase().includes(q)
+        || (item.sender_name || '').toLowerCase().includes(q);
+  }
 
-    tab.el.innerHTML += `
-      <a href="view_memo.php?memo_id=${item.id}" 
-         class="list-group-item list-group-item-action d-flex justify-content-between align-items-start">
-        <div class="flex-grow-1">
-          <div class="fw-semibold">${item.subject}
-            ${status === 'returned' && item.return_comment ? `
-              <span class="badge bg-warning ms-2" data-bs-toggle="tooltip" title="${item.return_comment}">
-                📝 Returned
-              </span>
-            ` : ''}
-          </div>
-          <small class="text-muted">${item.memo_id} · ${item.sender_name} · ${item.stage || 'N/A'}</small>
+  function cardHTML(item, s) {
+    const callout = (s === 'returned' && item.return_comment)
+      ? `<div class="endo-callout"><strong>Returned:</strong> ${esc(item.return_comment)}</div>` : '';
+    return `
+      <a href="view_memo.php?memo_id=${encodeURIComponent(item.id)}" class="f-card endo-card">
+        <div class="endo-top">
+          <span class="pill ${TINT[s]}">${esc(cap(s))}</span>
+          <span class="endo-stage">${esc(item.stage || 'N/A')}</span>
         </div>
-        <span class="badge bg-${getStatusColor(status)}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>
-      </a>
-    `;
-    tab.count++;
-  });
-
-  // Update badge counts for each tab
-  for (const [key, { count, badge }] of Object.entries(tabs)) {
-    const tabBtn = document.querySelector(`button[data-bs-target="#${badge}"] .badge`);
-    if (tabBtn) tabBtn.textContent = count;
+        <div class="endo-subject">${esc(item.subject || 'Untitled memo')}</div>
+        <div class="endo-meta">
+          <span><i class="bi bi-hash"></i>${esc(item.memo_id || '—')}</span>
+          <span><i class="bi bi-person"></i>${esc(item.sender_name || 'Unknown')}</span>
+        </div>
+        ${callout}
+      </a>`;
   }
 
-  // Activate Bootstrap tooltips
-  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-  tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl)
-  });
-}
+  function render() {
+    const counts = Object.fromEntries(STATUSES.map(s => [s, 0]));
+    const searchable = all.filter(matchesSearch);
+    searchable.forEach(i => { counts[statusOf(i)]++; });
+    STATUSES.forEach(s => {
+      const el = document.querySelector(`[data-c="${s}"]`);
+      if (el) el.textContent = counts[s];
+    });
 
-
-function filterEndorsements() {
-  const query = document.getElementById('endorsementSearch').value.toLowerCase();
-  const filtered = allEndorsements.filter(item =>
-    item.subject.toLowerCase().includes(query) ||
-    item.memo_id.toLowerCase().includes(query) ||
-    item.sender_name.toLowerCase().includes(query)
-  );
-  renderEndorsements(filtered);
-}
-
-function getStatusColor(status) {
-  switch ((status || '').toLowerCase()) {
-    case 'draft': return 'secondary';
-    case 'submitted': return 'primary';
-    case 'pending': return 'secondary';
-    case 'under review': return 'warning';
-    case 'endorsed': return 'info';
-    case 'approved': return 'success';
-    case 'rejected': return 'danger';
-    case 'returned': return 'danger';
-    case 'escalated': return 'warning';
-    case 'finalized': return 'dark';
-    default: return 'light';
+    const rows = searchable.filter(i => statusOf(i) === state.status);
+    list.innerHTML = rows.map(i => cardHTML(i, state.status)).join('');
+    empty.hidden = rows.length > 0;
   }
-}
+
+  function load() {
+    spin.classList.remove('d-none');
+    fetch('get_endorsements.php')
+      .then(r => r.json())
+      .then(d => {
+        spin.classList.add('d-none');
+        if (d.status !== 'success') return;
+        if (JSON.stringify(all) !== JSON.stringify(d.data)) { all = d.data || []; render(); }
+      })
+      .catch(err => { spin.classList.add('d-none'); console.error('endorsements:', err); });
+  }
+
+  document.getElementById('endoChips').addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    document.querySelectorAll('#endoChips .chip').forEach(c => c.classList.toggle('active', c === chip));
+    state.status = chip.dataset.status;
+    render();
+  });
+
+  let t;
+  document.getElementById('endorsementSearch').addEventListener('input', (e) => {
+    clearTimeout(t);
+    t = setTimeout(() => { state.q = e.target.value.trim(); render(); }, 150);
+  });
+
+  setInterval(() => { if (state.q === '') load(); }, 30000);
+  load();
+})();
 </script>
-
-</body>
-</html>

@@ -32,7 +32,12 @@ echo '<div class="col main-content pt-4 px-5" style="min-width:0;">';
 if (!$module) {
   include 'dashboard.php'; // Default page
 } elseif (isset($moduleMap[$module])) {
-  echo '<h4 class="text-success mb-4 text-capitalize">' . str_replace('_', ' ', $module) . '</h4>';
+  // Modules that render their own page header — skip the generic one.
+  $ownsHeader = ['my_memos', 'inbox', 'endorsements', 'archive', 'profile', 'user_admin',
+                 'closed_letters', 'dg_memos', 'upload_letter', 'letter_reception', 'my_letters'];
+  if (!in_array($module, $ownsHeader, true)) {
+    echo '<h4 class="text-success mb-4 text-capitalize">' . str_replace('_', ' ', $module) . '</h4>';
+  }
   include $moduleMap[$module];
 } else {
   // ✅ 404 Error Display

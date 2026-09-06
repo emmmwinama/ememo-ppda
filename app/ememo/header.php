@@ -77,6 +77,22 @@ $navInitials  = strtoupper(substr($navParts[0] ?? 'U', 0, 1) . substr($navParts[
     object-fit: cover;
     border-radius: var(--radius-sm);
   }
+  .hub-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .32rem .7rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-decoration: none;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .hub-link:hover { background: var(--brand-light); color: var(--brand); border-color: var(--brand); }
+  .hub-link .hub-link-label { display: none; }
+  @media (min-width: 576px) { .hub-link .hub-link-label { display: inline; } }
   .app-navbar-actions { margin-left: auto; display: flex; align-items: center; gap: .5rem; }
   .icon-btn {
     position: relative;
@@ -170,6 +186,10 @@ $navInitials  = strtoupper(substr($navParts[0] ?? 'U', 0, 1) . substr($navParts[
   <a class="app-navbar-brand" href="index.php">
     <img src="logo.jpg" alt="PPDA">
     <span>e&#8209;Memo</span>
+  </a>
+  <a class="hub-link" href="../../hub/index.php" title="Back to PPDA Digital Hub (e-Service, e-Memo, Reports)">
+    <i class="bi bi-grid-3x3-gap-fill"></i>
+    <span class="hub-link-label">Digital Hub</span>
   </a>
   <div class="app-navbar-actions">
     <div class="dropdown">

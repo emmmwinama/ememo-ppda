@@ -20,9 +20,13 @@
     }
     .sidebar.collapsed { --rail-w: 68px; }
 
-    .sidebar .nav-scroll { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; padding: .5rem 0; }
-    .sidebar .nav-scroll::-webkit-scrollbar { width: 5px; }
-    .sidebar .nav-scroll::-webkit-scrollbar-thumb { background: var(--border-strong, #cbd5e1); border-radius: 3px; }
+    .sidebar .nav-scroll { flex: 1 1 auto; overflow: hidden; padding: .35rem 0; }
+    /* Escape hatch: only allow scrolling on very short viewports */
+    @media (max-height: 680px) {
+      .sidebar .nav-scroll { overflow-y: auto; overflow-x: hidden; }
+      .sidebar .nav-scroll::-webkit-scrollbar { width: 5px; }
+      .sidebar .nav-scroll::-webkit-scrollbar-thumb { background: var(--border-strong, #cbd5e1); border-radius: 3px; }
+    }
 
     .sidebar .nav-link {
       position: relative;
@@ -31,7 +35,7 @@
       gap: .7rem;
       white-space: nowrap;
       margin: 1px .5rem;
-      padding: .5rem .7rem;
+      padding: .4rem .7rem;
       border-radius: var(--radius-md, 10px);
       color: var(--text, #24292b);
       font-size: .82rem;
@@ -52,16 +56,22 @@
     }
     .sidebar .nav-link .badge { margin-left: auto; font-size: .62rem; }
 
-    .sidebar-section { margin-top: .9rem; }
-    .sidebar-section:first-child { margin-top: .25rem; }
+    .sidebar-section { margin-top: .5rem; }
+    .sidebar-section:first-child { margin-top: .2rem; }
     .sidebar-section h6 {
-      margin: 0 0 .15rem;
+      margin: 0 0 .1rem;
       padding: 0 1.2rem;
       font-size: .66rem;
       font-weight: 800;
       letter-spacing: .09em;
       text-transform: uppercase;
       color: var(--muted, #6b7280);
+    }
+    /* Account group sits last — separated by a rule, not a huge flex gap */
+    .sidebar-section.sidebar-account {
+      margin-top: .75rem;
+      padding-top: .5rem;
+      border-top: 1px solid var(--border, #e3e7ea);
     }
 
     /* Collapsed state */
@@ -190,7 +200,7 @@
       </a>
     </div>
 
-    <div class="sidebar-section mt-auto">
+    <div class="sidebar-section sidebar-account">
       <h6>Account</h6>
       <a href="index.php?module=profile" title="My Profile"
          class="nav-link <?= $mod === 'profile' ? 'active' : '' ?>">

@@ -33,3 +33,12 @@ app/ememo/libs/libs/mpdf/**/tmp/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# e-Services runtime uploads
+app/eservice/uploads/*
+!app/eservice/uploads/.htaccess
+!app/eservice/uploads/.gitkeep
+app/eservice/import/config.php
+
+# Legacy supplier dump (25MB, contains PII — restore locally, do not commit)
+app/eservice/sql/legacy_suppliers.sql

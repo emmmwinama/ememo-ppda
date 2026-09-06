@@ -1,205 +1,277 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>My Memos</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<?php
+// memo_my.php — rendered inside index.php (header.php already loads Bootstrap, Icons, theme.css)
+?>
+<style>
+  /* ── My Memos (Farmis-style clean surface) ─────────────────────── */
+  .mm { --gap: 1rem; }
 
-  <!-- Bootstrap -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Bootstrap Icons -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="../../assets/css/theme.css" rel="stylesheet">
+  .mm-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap; margin-bottom: 1.3rem;
+  }
+  .mm-title { font-size: 1.4rem; font-weight: 800; margin: 0; color: var(--text); }
+  .mm-subtitle { color: var(--muted); font-size: .9rem; margin: .2rem 0 0; }
+  .mm-new { font-weight: 600; }
 
-  <style>
-    h3 {
-      font-weight: 600;
-    }
-    .returned-comment {
-      background: #f8d7da;
-      border-left: 5px solid var(--danger);
-      padding: 1rem;
-      margin-top: 1rem;
-      border-radius: var(--radius-sm);
-      font-size: 0.95rem;
-    }
-    .returned-comment strong {
-      color: #842029;
-    }
-    .returned-comment small {
-      color: var(--muted);
-    }
-    .returned-comment p {
-      margin-top: 0.5rem;
-      margin-bottom: 0;
-      color: var(--text);
-    }
-    .nav-tabs .nav-link {
-      font-weight: 500;
-      border: none;
-      border-bottom: 3px solid transparent;
-    }
-    .nav-tabs .nav-link.active {
-      border-color: var(--brand);
-      background-color: transparent;
-    }
-    .card-body h5 {
-      font-weight: 500;
-    }
-  </style>
-</head>
+  .mm-toolbar { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .mm-search {
+    position: relative; flex: 1 1 280px;
+  }
+  .mm-search i {
+    position: absolute; left: .85rem; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: .95rem; pointer-events: none;
+  }
+  .mm-search input {
+    width: 100%; height: 40px; padding: 0 .9rem 0 2.3rem;
+    background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius-md);
+    font-size: .9rem; color: var(--text); outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .mm-search input:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-light);
+  }
+  .mm-sort { height: 40px; width: auto; border-radius: var(--radius-md); border-color: var(--border); }
 
-<body>
+  .mm-chips {
+    display: flex; gap: .5rem; flex-wrap: wrap;
+    margin-bottom: 1.3rem;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .35rem .8rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    font-size: .82rem; font-weight: 600; color: var(--muted);
+    cursor: pointer; user-select: none;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .chip:hover { border-color: var(--border-strong, #cbd5e1); color: var(--text); }
+  .chip.active {
+    background: var(--brand); border-color: var(--brand); color: #fff;
+  }
+  .chip .chip-count {
+    display: inline-block; min-width: 1.25rem; text-align: center;
+    padding: 0 .35rem; border-radius: var(--radius-pill);
+    background: rgba(0,0,0,.06); font-size: .74rem; font-weight: 700;
+  }
+  .chip.active .chip-count { background: rgba(255,255,255,.25); }
 
-<div class="container py-5">
-  <h3 class="mb-4 text-primary">📂 My Memos</h3>
+  .mm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--gap);
+  }
 
-  <!-- Search & Sort -->
-  <div class="mb-4">
-    <input type="text" id="memoSearch" class="form-control form-control-lg" placeholder="Search memos by subject or reference...">
+  .memo-card {
+    display: flex; flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-flat);
+    padding: 1.1rem;
+    transition: box-shadow .18s ease, transform .18s ease;
+  }
+  .memo-card:hover { box-shadow: var(--shadow-flat-hover); transform: translateY(-1px); }
+  .memo-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: .6rem; }
+  .memo-date { font-size: .76rem; color: var(--muted); }
+  .memo-subject {
+    font-size: 1rem; font-weight: 700; color: var(--text);
+    margin: 0 0 .4rem; line-height: 1.35;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .memo-meta { display: flex; flex-wrap: wrap; gap: .25rem 1rem; margin-bottom: .3rem; }
+  .memo-meta span { font-size: .8rem; color: var(--muted); display: inline-flex; align-items: center; gap: .35rem; }
+  .memo-meta .bi { font-size: .85rem; }
+
+  .memo-callout {
+    margin-top: .8rem; padding: .7rem .85rem;
+    background: #fdecee; border: 1px solid #f6d4d9;
+    border-radius: var(--radius-md); font-size: .82rem;
+  }
+  .memo-callout-head { font-weight: 700; color: #be123c; display: flex; align-items: center; gap: .4rem; }
+  .memo-callout p { margin: .35rem 0 0; color: var(--text); }
+
+  .memo-actions { display: flex; gap: .5rem; margin-top: auto; padding-top: .9rem; }
+  .memo-actions .btn { font-size: .8rem; font-weight: 600; }
+
+
+  .pill {
+    display: inline-block; padding: .15rem .6rem;
+    border-radius: var(--radius-pill); font-size: .74rem; font-weight: 600;
+  }
+  .t-dark    { background: #e8ebee; color: #1f2937; }
+  .t-neutral { background: #eef1f4; color: #475569; }
+  .t-slate   { background: #eef1f4; color: #475569; }
+  .t-green   { background: var(--brand-light); color: var(--brand-dark); }
+  .t-amber   { background: #fdefda; color: #b45309; }
+  .t-rose    { background: #fdecee; color: #be123c; }
+  .t-sky     { background: #e6f4fb; color: #0369a1; }
+</style>
+
+<div class="mm">
+
+  <div class="mm-head">
+    <div>
+      <h1 class="mm-title">My Memos</h1>
+      <p class="mm-subtitle">Track your memos through every stage of the workflow</p>
+    </div>
+    <a href="index.php?module=create_memo" class="btn btn-success btn-sm mm-new">
+      <i class="bi bi-plus-lg me-1"></i>New memo
+    </a>
   </div>
 
-  <div class="mb-4 d-flex justify-content-between align-items-center">
-    <div class="text-muted">Sort by:</div>
-    <select id="sortSelect" class="form-select form-select-sm w-auto">
-      <option value="newest" selected>Newest First</option>
-      <option value="oldest">Oldest First</option>
+  <div class="mm-toolbar">
+    <div class="mm-search">
+      <i class="bi bi-search"></i>
+      <input type="text" id="memoSearch" placeholder="Search by subject or reference…" autocomplete="off">
+    </div>
+    <select id="sortSelect" class="form-select form-select-sm mm-sort">
+      <option value="newest" selected>Newest first</option>
+      <option value="oldest">Oldest first</option>
     </select>
   </div>
 
-  <!-- Tabs -->
-  <ul class="nav nav-tabs mb-4" id="memoTabs" role="tablist">
-    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#draft">Draft <span class="badge bg-secondary" id="count-draft">0</span></button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#submitted">Submitted <span class="badge bg-primary" id="count-submitted">0</span></button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#under-review">Under Review <span class="badge bg-warning" id="count-under-review">0</span></button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#endorsed">Endorsed <span class="badge bg-info" id="count-endorsed">0</span></button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#approved">Approved <span class="badge bg-success" id="count-approved">0</span></button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#rejected">Rejected <span class="badge bg-danger" id="count-rejected">0</span></button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#returned">Returned <span class="badge bg-danger" id="count-returned">0</span></button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#finalized">Finalized <span class="badge bg-dark" id="count-finalized">0</span></button></li>
-  </ul>
-
-  <!-- Memo Containers -->
-  <div class="tab-content">
-    <div class="tab-pane fade show active" id="draft"><div class="row g-4" id="draftMemosContainer"></div></div>
-    <div class="tab-pane fade" id="submitted"><div class="row g-4" id="submittedMemosContainer"></div></div>
-    <div class="tab-pane fade" id="under-review"><div class="row g-4" id="underReviewMemosContainer"></div></div>
-    <div class="tab-pane fade" id="endorsed"><div class="row g-4" id="endorsedMemosContainer"></div></div>
-    <div class="tab-pane fade" id="approved"><div class="row g-4" id="approvedMemosContainer"></div></div>
-    <div class="tab-pane fade" id="rejected"><div class="row g-4" id="rejectedMemosContainer"></div></div>
-    <div class="tab-pane fade" id="returned"><div class="row g-4" id="returnedMemosContainer"></div></div>
-    <div class="tab-pane fade" id="finalized"><div class="row g-4" id="finalizedMemosContainer"></div></div>
+  <div class="mm-chips" id="statusChips">
+    <button class="chip active" data-status="All">All <span class="chip-count" data-count="All">0</span></button>
+    <button class="chip" data-status="Draft">Draft <span class="chip-count" data-count="Draft">0</span></button>
+    <button class="chip" data-status="Submitted">Submitted <span class="chip-count" data-count="Submitted">0</span></button>
+    <button class="chip" data-status="Under Review">Under Review <span class="chip-count" data-count="Under Review">0</span></button>
+    <button class="chip" data-status="Endorsed">Endorsed <span class="chip-count" data-count="Endorsed">0</span></button>
+    <button class="chip" data-status="Approved">Approved <span class="chip-count" data-count="Approved">0</span></button>
+    <button class="chip" data-status="Rejected">Rejected <span class="chip-count" data-count="Rejected">0</span></button>
+    <button class="chip" data-status="Returned">Returned <span class="chip-count" data-count="Returned">0</span></button>
+    <button class="chip" data-status="Finalized">Finalized <span class="chip-count" data-count="Finalized">0</span></button>
   </div>
+
+  <div class="mm-grid" id="memoGrid"></div>
+  <div class="f-state" id="memoEmpty" hidden>
+    <i class="bi bi-inbox"></i>
+    <p>No memos match this view.</p>
+  </div>
+
 </div>
 
-<!-- Bootstrap Bundle -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
-let allMemos = [];
+(() => {
+  const STATUS_TINT = {
+    'Draft': 't-neutral', 'Submitted': 't-amber', 'Under Review': 't-amber',
+    'Endorsed': 't-sky', 'Approved': 't-green', 'Rejected': 't-rose',
+    'Returned': 't-rose', 'Finalized': 't-dark',
+  };
+  const STATUSES = Object.keys(STATUS_TINT);
 
-function getStatusColor(status) {
-  switch (status) {
-    case 'Draft': return 'secondary';
-    case 'Submitted': return 'primary';
-    case 'Under Review': return 'warning';
-    case 'Endorsed': return 'info';
-    case 'Approved': return 'success';
-    case 'Rejected': return 'danger';
-    case 'Returned': return 'danger';
-    case 'Finalized': return 'dark';
-    default: return 'light';
+  const state = { status: 'All', q: '', sort: 'newest' };
+  let allMemos = [];
+
+  const grid  = document.getElementById('memoGrid');
+  const empty = document.getElementById('memoEmpty');
+
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => (
+    { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+  ));
+
+  const fmtDate = (d) => {
+    if (!d) return '';
+    const dt = new Date(d.replace(' ', 'T'));
+    return isNaN(dt) ? '' : dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  function matchesSearch(m) {
+    if (!state.q) return true;
+    const q = state.q.toLowerCase();
+    return (m.subject || '').toLowerCase().includes(q)
+        || (m.memo_id || '').toLowerCase().includes(q);
   }
-}
 
-function renderMemos(memos) {
-  const containers = {
-    'Draft': document.getElementById('draftMemosContainer'),
-    'Submitted': document.getElementById('submittedMemosContainer'),
-    'Under Review': document.getElementById('underReviewMemosContainer'),
-    'Endorsed': document.getElementById('endorsedMemosContainer'),
-    'Approved': document.getElementById('approvedMemosContainer'),
-    'Rejected': document.getElementById('rejectedMemosContainer'),
-    'Returned': document.getElementById('returnedMemosContainer'),
-    'Finalized': document.getElementById('finalizedMemosContainer')
-  };
+  function cardHTML(m) {
+    const tint = STATUS_TINT[m.status] || 't-neutral';
+    const editable = m.status === 'Draft' || m.status === 'Returned';
 
-  // Clear
-  Object.values(containers).forEach(c => { if (c) c.innerHTML = ''; });
-
-  const counts = {
-    'Draft': 0, 'Submitted': 0, 'Under Review': 0,
-    'Endorsed': 0, 'Approved': 0, 'Rejected': 0, 'Returned': 0, 'Finalized': 0
-  };
-
-  memos.forEach(memo => {
-    const container = containers[memo.status];
-    if (!container) return;
-
-    counts[memo.status]++;
-
-    container.innerHTML += `
-      <div class="col-12">
-        <div class="card h-100 shadow-sm">
-          <div class="card-body">
-            <h5 class="card-title">${memo.subject}</h5>
-            <h6 class="card-subtitle mb-2 text-muted">${memo.memo_id}</h6>
-            <p class="card-text mb-2">
-              <span class="badge bg-${getStatusColor(memo.status)}">${memo.status}</span>
-              <span class="ms-2"><strong>Stage:</strong> ${memo.stage || 'N/A'}</span>
-            </p>
-${(memo.status === 'Draft' || memo.status === 'Returned') ? `
-  <div class="returned-comment">
-    ${memo.status === 'Returned' && memo.return_comment ? `
-      <strong>🔄 Returned by ${memo.returned_by || 'Unknown'}</strong><br>
-      <small>${memo.return_time ? new Date(memo.return_time).toLocaleString() : 'Unknown time'}</small>
-      <p class="mt-2"><i class="bi bi-chat-left-text-fill text-danger me-2"></i>${memo.return_comment}</p>
-    ` : ''}
-    <div class="mt-3">
-      <a href="edit_memo.php?memo_id=${memo.id}" class="btn btn-sm btn-outline-warning me-2">✏️ Edit Memo</a>
-      <a href="view_memo.php?memo_id=${memo.id}" class="btn btn-sm btn-outline-primary">📄 View Memo</a>
-    </div>
-  </div>
-` : `
-  <div class="mt-3">
-    <a href="view_memo.php?memo_id=${memo.id}" class="btn btn-sm btn-outline-primary">📄 View Memo</a>
-  </div>
-`}
-
-          </div>
-          
+    const callout = (m.status === 'Returned' && m.return_comment) ? `
+      <div class="memo-callout">
+        <div class="memo-callout-head">
+          <i class="bi bi-arrow-counterclockwise"></i>
+          Returned by ${esc(m.returned_by || 'Unknown')}${m.return_time ? ' · ' + esc(new Date(m.return_time.replace(' ','T')).toLocaleString()) : ''}
         </div>
-      </div>
-    `;
+        <p>${esc(m.return_comment)}</p>
+      </div>` : '';
+
+    return `
+      <article class="memo-card">
+        <div class="memo-card-top">
+          <span class="pill ${tint}">${esc(m.status)}</span>
+          <span class="memo-date">${esc(fmtDate(m.created_at))}</span>
+        </div>
+        <h3 class="memo-subject">${esc(m.subject || 'Untitled memo')}</h3>
+        <div class="memo-meta">
+          <span><i class="bi bi-hash"></i>${esc(m.memo_id || '—')}</span>
+          <span><i class="bi bi-diagram-3"></i>${esc(m.stage || 'N/A')}</span>
+        </div>
+        ${callout}
+        <div class="memo-actions">
+          ${editable ? `<a href="edit_memo.php?memo_id=${encodeURIComponent(m.id)}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil me-1"></i>Edit</a>` : ''}
+          <a href="view_memo.php?memo_id=${encodeURIComponent(m.id)}" class="btn btn-sm btn-outline-success"><i class="bi bi-eye me-1"></i>View</a>
+        </div>
+      </article>`;
+  }
+
+  function updateChipCounts() {
+    const searchable = allMemos.filter(matchesSearch);
+    document.querySelector('[data-count="All"]').textContent = searchable.length;
+    STATUSES.forEach(s => {
+      const el = document.querySelector(`[data-count="${CSS.escape(s)}"]`);
+      if (el) el.textContent = searchable.filter(m => m.status === s).length;
+    });
+  }
+
+  function render() {
+    let list = allMemos.filter(matchesSearch);
+    if (state.status !== 'All') list = list.filter(m => m.status === state.status);
+
+    list.sort((a, b) => {
+      const da = new Date((a.created_at || '').replace(' ', 'T')).getTime() || 0;
+      const db = new Date((b.created_at || '').replace(' ', 'T')).getTime() || 0;
+      return state.sort === 'oldest' ? da - db : db - da;
+    });
+
+    grid.innerHTML = list.map(cardHTML).join('');
+    empty.hidden = list.length > 0;
+    updateChipCounts();
+  }
+
+  // Wiring
+  document.getElementById('statusChips').addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c === chip));
+    state.status = chip.dataset.status;
+    render();
   });
 
-  // Update badge counts
-  for (const status in counts) {
-    const badge = document.getElementById(`count-${status.toLowerCase().replace(/\s+/g, '-')}`);
-    if (badge) {
-      badge.textContent = counts[status];
-    }
-  }
-}
+  let t;
+  document.getElementById('memoSearch').addEventListener('input', (e) => {
+    clearTimeout(t);
+    t = setTimeout(() => { state.q = e.target.value.trim(); render(); }, 150);
+  });
 
-function loadMemos() {
+  document.getElementById('sortSelect').addEventListener('change', (e) => {
+    state.sort = e.target.value;
+    render();
+  });
+
   fetch('get_my_memos.php')
-    .then(res => res.json())
+    .then(r => r.json())
     .then(data => {
-      if (data.status === 'success') {
-        allMemos = data.data;
-        renderMemos(allMemos);
-      }
+      if (data.status === 'success') { allMemos = data.data || []; render(); }
+      else { grid.innerHTML = ''; empty.hidden = false; }
     })
     .catch(err => {
       console.error('Failed to load memos', err);
+      grid.innerHTML = '';
+      empty.hidden = false;
     });
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  loadMemos();
-});
+})();
 </script>
-
-</body>
-</html>

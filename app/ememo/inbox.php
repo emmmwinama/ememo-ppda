@@ -1,361 +1,360 @@
 <?php
+// inbox.php — rendered inside index.php (header.php already loads Bootstrap, Icons, theme.css)
 require 'auth.php';
 ?>
+<style>
+  /* ── Inbox (Farmis-style clean surface) ────────────────────────── */
+  .ib { --gap: 1rem; }
 
-<div class="container py-4">
-  <h3 class="mb-4">📥 My Inbox</h3>
+  .ib-head { margin-bottom: 1.3rem; }
+  .ib-title { font-size: 1.4rem; font-weight: 800; margin: 0; color: var(--text); }
+  .ib-subtitle { color: var(--muted); font-size: .9rem; margin: .2rem 0 0; }
 
-  <!-- Tabs -->
-  <ul class="nav nav-tabs mb-3" id="inboxTabs">
-    <li class="nav-item">
-      <button class="nav-link active" data-status="main">
-        Main 
-        <span class="badge bg-secondary" id="mainCount">0</span>
-        <span class="ms-1 text-primary d-none" id="mainNewDot">🔵</span>
-      </button>
-    </li>
-    <li class="nav-item">
-      <button class="nav-link" data-status="escalated">Clarifications <span class="badge bg-warning" id="escalatedCount">0</span></button>
-    </li>
-    <li class="nav-item">
-      <button class="nav-link" data-status="pending">Pending <span class="badge bg-primary" id="pendingCount">0</span></button>
-    </li>
-    <li class="nav-item">
-      <button class="nav-link" data-status="approved">Approved <span class="badge bg-success" id="approvedCount">0</span></button>
-    </li>
-    <li class="nav-item">
-      <button class="nav-link" data-status="returned">Returned <span class="badge bg-danger" id="returnedCount">0</span></button>
-    </li>
-    <li class="nav-item">
-      <button class="nav-link" data-status="rejected">Rejected <span class="badge bg-danger" id="rejectedCount">0</span></button>
-    </li>
-	<li class="nav-item">
-   <button class="nav-link" data-status="forwarded">
-     Forwarded <span class="badge bg-success" id="forwardedCount">0</span>
-   </button>
-  </li>
-  </ul>
+  .ib-chips { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .chip {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .35rem .8rem;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    font-size: .82rem; font-weight: 600; color: var(--muted);
+    cursor: pointer; user-select: none;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .chip:hover { border-color: var(--border-strong, #cbd5e1); color: var(--text); }
+  .chip.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .chip .chip-count {
+    display: inline-block; min-width: 1.25rem; text-align: center;
+    padding: 0 .35rem; border-radius: var(--radius-pill);
+    background: rgba(0,0,0,.06); font-size: .74rem; font-weight: 700;
+  }
+  .chip.active .chip-count { background: rgba(255,255,255,.25); }
+  .chip .unread-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--brand);
+    display: inline-block;
+  }
+  .chip.active .unread-dot { background: #fff; }
 
-  <!-- Filters -->
-  <div class="row mb-3">
-    <div class="col-md-4 mb-2">
-      <select id="statusFilter" class="form-select">
-        <option value="">All Statuses</option>
-        <option value="Submitted">Submitted</option>
-        <option value="Under Review">Under Review</option>
-        <option value="Endorsed">Endorsed</option>
-        <option value="Approved">Approved</option>
-        <option value="Rejected">Rejected</option>
-        <option value="Returned">Returned</option>
-        <option value="Finalized">Finalized</option>
-      </select>
-    </div>
+  .ib-toolbar { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.3rem; }
+  .ib-search { position: relative; flex: 1 1 260px; }
+  .ib-search i {
+    position: absolute; left: .85rem; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: .95rem; pointer-events: none;
+  }
+  .ib-search input {
+    width: 100%; height: 40px; padding: 0 .9rem 0 2.3rem;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-md); font-size: .9rem; color: var(--text); outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .ib-search input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-light); }
+  .ib-filter { height: 40px; width: auto; border-radius: var(--radius-md); border-color: var(--border); }
+  .ib-clear { height: 40px; border-radius: var(--radius-md); font-weight: 600; }
 
-    <div class="col-md-6 mb-2">
-      <input type="text" id="searchInput" class="form-control" placeholder="Search by Subject or Reference...">
-    </div>
+  .ib-panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-flat); overflow: hidden;
+  }
+  .ib-table { margin: 0; font-size: .9rem; }
+  .ib-table thead th {
+    background: var(--bg); color: var(--muted); font-weight: 600;
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  .ib-table tbody td { vertical-align: middle; border-top: 1px solid var(--border); }
+  .ib-table tbody tr:first-child td { border-top: none; }
+  .ib-table tbody tr:hover { background: var(--bg); }
+  .ib-table tr.is-unread { background: #fffdf5; }
+  .ib-table tr.is-unread:hover { background: #fff8e8; }
+  .ib-table tr.is-unread td:first-child { box-shadow: inset 3px 0 0 var(--brand); }
+  .ib-subject { font-weight: 600; color: var(--text); }
 
-    <div class="col-md-2 mb-2 d-grid">
-      <button class="btn btn-outline-secondary d-none" id="clearFiltersBtn">Clear Filters</button>
-    </div>
+  .pill {
+    display: inline-block; padding: .15rem .6rem;
+    border-radius: var(--radius-pill); font-size: .74rem; font-weight: 600;
+  }
+  .t-dark    { background: #e8ebee; color: #1f2937; }
+  .t-neutral { background: #eef1f4; color: #475569; }
+  .t-slate   { background: #eef1f4; color: #475569; }
+  .t-green   { background: var(--brand-light); color: var(--brand-dark); }
+  .t-amber   { background: #fdefda; color: #b45309; }
+  .t-rose    { background: #fdecee; color: #be123c; }
+  .t-sky     { background: #e6f4fb; color: #0369a1; }
+
+  .ib-pager { display: flex; justify-content: center; gap: .35rem; margin-top: 1.2rem; flex-wrap: wrap; }
+  .ib-pager button {
+    min-width: 34px; height: 34px; padding: 0 .5rem;
+    border: 1px solid var(--border); background: var(--surface);
+    border-radius: var(--radius-sm); font-size: .82rem; font-weight: 600; color: var(--muted);
+    cursor: pointer; transition: background .15s, color .15s, border-color .15s;
+  }
+  .ib-pager button:hover { border-color: var(--brand); color: var(--brand); }
+  .ib-pager button.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+
+</style>
+
+<div class="ib">
+
+  <div class="ib-head">
+    <h1 class="ib-title">My Inbox</h1>
+    <p class="ib-subtitle">Memos awaiting your review, endorsement or action</p>
   </div>
 
-  <!-- Inbox Table -->
+  <div class="ib-chips" id="inboxChips">
+    <button class="chip active" data-status="main">Main <span class="chip-count" id="mainCount">0</span><span class="unread-dot d-none" id="mainNewDot"></span></button>
+    <button class="chip" data-status="escalated">Clarifications <span class="chip-count" id="escalatedCount">0</span></button>
+    <button class="chip" data-status="pending">Pending <span class="chip-count" id="pendingCount">0</span></button>
+    <button class="chip" data-status="approved">Approved <span class="chip-count" id="approvedCount">0</span></button>
+    <button class="chip" data-status="returned">Returned <span class="chip-count" id="returnedCount">0</span></button>
+    <button class="chip" data-status="rejected">Rejected <span class="chip-count" id="rejectedCount">0</span></button>
+    <button class="chip" data-status="forwarded">Forwarded <span class="chip-count" id="forwardedCount">0</span></button>
+  </div>
+
+  <div class="ib-toolbar">
+    <div class="ib-search">
+      <i class="bi bi-search"></i>
+      <input type="text" id="searchInput" placeholder="Search by subject or reference…" autocomplete="off">
+    </div>
+    <select id="statusFilter" class="form-select form-select-sm ib-filter">
+      <option value="">All statuses</option>
+      <option value="Submitted">Submitted</option>
+      <option value="Under Review">Under Review</option>
+      <option value="Endorsed">Endorsed</option>
+      <option value="Approved">Approved</option>
+      <option value="Rejected">Rejected</option>
+      <option value="Returned">Returned</option>
+      <option value="Finalized">Finalized</option>
+    </select>
+    <button class="btn btn-outline-secondary btn-sm ib-clear d-none" id="clearFiltersBtn">
+      <i class="bi bi-x-lg me-1"></i>Clear
+    </button>
+  </div>
+
   <div id="inboxTableContainer">
-    <div class="text-center">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-    </div>
+    <div class="f-state"><div class="spinner-border spinner-border-sm" role="status"></div><p class="mt-2">Loading inbox…</p></div>
   </div>
 
-  <!-- Pagination Controls -->
-  <div class="mt-4 d-flex justify-content-center" id="paginationContainer"></div>
+  <div class="ib-pager" id="paginationContainer"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
-const validTabs = ['main','escalated','pending','approved','returned','rejected','forwarded'];
-let activeTab = localStorage.getItem('activeInboxTab') || 'main';
-if (!validTabs.includes(activeTab)) {
-  activeTab = 'main';
-  localStorage.setItem('activeInboxTab', activeTab);
-}
+(() => {
+  const validTabs = ['main','escalated','pending','approved','returned','rejected','forwarded'];
+  let activeTab = localStorage.getItem('activeInboxTab') || 'main';
+  if (!validTabs.includes(activeTab)) { activeTab = 'main'; localStorage.setItem('activeInboxTab', activeTab); }
 
-let groupedMemos = {};    // { main: [...], escalated: [...], … }
-let filteredMemos = [];
-let currentPage = 1;
-const memosPerPage = 10;
+  let groupedMemos = {};
+  let filteredMemos = [];
+  let currentPage = 1;
+  const memosPerPage = 10;
 
-document.addEventListener('DOMContentLoaded', () => {
-  loadInboxMemos();
-
-  // Tab clicks
-  document.querySelectorAll('#inboxTabs button').forEach(tab => {
-    const status = tab.dataset.status;
-    tab.classList.toggle('active', status === activeTab);
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('#inboxTabs button').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      activeTab = status;
-      localStorage.setItem('activeInboxTab', activeTab);
-      applyFilters();
-    });
-  });
-
-  // Filters
-  document.getElementById('statusFilter')
-    .addEventListener('change', () => { saveFilters(); applyFilters(); toggleClearButton(); });
-  document.getElementById('searchInput')
-    .addEventListener('input',  () => { saveFilters(); applyFilters(); toggleClearButton(); });
-  document.getElementById('clearFiltersBtn')
-    .addEventListener('click', confirmClearFilters);
-  loadSavedFilters();
-});
-
-function loadInboxMemos() {
-  fetch('get_inbox.php')
-    .then(r => r.json())
-    .then(({status, data, message}) => {
-      if (status !== 'success') {
-        return document.getElementById('inboxTableContainer').innerHTML =
-          `<div class="alert alert-danger">${message}</div>`;
-      }
-      groupedMemos = data;       // now holds main, escalated, etc.
-      updateTabCounts();
-      applyFilters();
-    })
-    .catch(err => {
-      console.error('Inbox fetch error:', err);
-      document.getElementById('inboxTableContainer').innerHTML =
-        `<div class="alert alert-danger">Failed to load inbox: ${err.message}</div>`;
-    });
-}
-
-function applyFilters() {
-  const statusFilter = (document.getElementById('statusFilter').value || '').toLowerCase();
-  const searchFilter = (document.getElementById('searchInput').value || '').toLowerCase();
-
-  const base = groupedMemos[activeTab] || [];
-  filteredMemos = base.filter(memo => {
-    const s = memo.status.toLowerCase();
-    const matchesStatus = !statusFilter || s === statusFilter;
-    const matchesSearch = !searchFilter ||
-      memo.subject.toLowerCase().includes(searchFilter) ||
-      memo.memo_id.toLowerCase().includes(searchFilter);
-    return matchesStatus && matchesSearch;
-  });
-
-  currentPage = 1;
-  renderTable(filteredMemos);
-}
-
-function updateTabCounts() {
-  document.getElementById('mainCount').textContent      = (groupedMemos.main      || []).length;
-  document.getElementById('escalatedCount').textContent = (groupedMemos.escalated || []).length;
-  document.getElementById('pendingCount').textContent   = (groupedMemos.pending   || []).length;
-  document.getElementById('approvedCount').textContent  = (groupedMemos.approved  || []).length;
-  document.getElementById('returnedCount').textContent  = (groupedMemos.returned  || []).length;
-  document.getElementById('rejectedCount').textContent  = (groupedMemos.rejected  || []).length;
-  document.getElementById('forwardedCount').textContent = (groupedMemos.forwarded || []).length;
-
-  const hasUnread = (groupedMemos.main || []).some(m => !m.viewed);
-  document.getElementById('mainNewDot')
-    .classList.toggle('d-none', !hasUnread);
-}
-
-function renderTable(memos) {
   const container = document.getElementById('inboxTableContainer');
   const pager     = document.getElementById('paginationContainer');
 
-  if (memos.length === 0) {
-    container.innerHTML = `<div class="alert alert-info">No memos match your criteria.</div>`;
-    pager.innerHTML     = '';
-    return;
-  }
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => (
+    { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+  ));
 
-  // paginate
-  const start = (currentPage - 1) * memosPerPage;
-  const page  = memos.slice(start, start + memosPerPage);
-
-  // build rows, using "m" consistently
-  const rowsHtml = page.map(m => `
-    <tr${!m.viewed ? ' class="table-warning"' : ''}>
-      <td>${m.memo_id}</td>
-      <td>
-        ${m.subject}
-        ${!m.viewed ? '<span class="badge bg-info ms-2">New</span>' : ''}
-      </td>
-      <td><span class="text-muted">${m.type}</span></td>
-      <td><span class="badge bg-${getStatusColor(m.status)}">${m.status}</span></td>
-      <td>${new Date(m.created_at).toLocaleDateString()}</td>
-      <td>
-        <a
-          href="${m.type === 'Direct Memo' ? 'view_direct_memo.php' : 'view_memo.php'}?memo_id=${m.id}"
-          class="btn btn-sm ${m.viewed ? 'btn-outline-primary' : 'btn-primary'}"
-          onclick="event.preventDefault();
-                   markInboxViewed(${m.id}, '${m.type}')
-                     .then(() => { window.location = this.href; })
-                     .catch(() => { window.location = this.href; });">
-          📄 Open
-        </a>
-      </td>
-    </tr>
-  `).join('');
-
-  // render table
-  container.innerHTML = `
-    <div class="table-responsive">
-      <table class="table table-bordered table-hover align-middle">
-        <thead class="table-light">
-          <tr>
-            <th>Reference</th>
-            <th>Subject</th>
-            <th>Type</th>
-            <th>Status</th>
-            <th>Date Created</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rowsHtml}
-        </tbody>
-      </table>
-    </div>
-  `;
-
-  // pagination
-  const totalPages = Math.ceil(memos.length / memosPerPage);
-  if (totalPages <= 1) {
-    pager.innerHTML = '';
-    return;
-  }
-  let pagerHtml = '';
-  for (let i = 1; i <= totalPages; i++) {
-    pagerHtml += `
-      <button
-        class="btn btn-sm ${i === currentPage ? 'btn-primary' : 'btn-outline-primary'} me-1"
-        onclick="goToPage(${i})">
-        ${i}
-      </button>
-    `;
-  }
-  pager.innerHTML = pagerHtml;
-}
-
-
-function renderPagination(total) {
-  const totalPages = Math.ceil(total / memosPerPage);
-  if (totalPages <= 1) {
-    document.getElementById('paginationContainer').innerHTML = '';
-    return;
-  }
-  let html = '';
-  for (let i = 1; i <= totalPages; i++) {
-    html += `<button class="btn btn-sm ${i===currentPage?'btn-primary':'btn-outline-primary'} me-1"
-                     onclick="goToPage(${i})">${i}</button>`;
-  }
-  document.getElementById('paginationContainer').innerHTML = html;
-}
-
-function goToPage(p) {
-  currentPage = p;
-  renderTable(filteredMemos);
-}
-
-function markInboxViewed(id, memoType) {
-  return fetch('mark_inbox_viewed.php', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({
-      memo_id:   id,
-      memo_type: memoType === 'Direct Memo' ? 'Direct' : 'Workflow'
-    })
-  });
-}
-
-
-function getStatusColor(status) {
-  const s = status.toLowerCase();
-
-  // ▶︎ New: all forwarded statuses get green
-  if (s.startsWith('forwarded:')) {
-    return 'success';
-  }
-
-  switch (s) {
-    case 'draft':          return 'secondary';
-    case 'submitted':      return 'primary';
-    case 'under review':   return 'warning';
-    case 'endorsed':       return 'info';
-    case 'approved':       return 'success';
-    case 'rejected':       return 'danger';
-    case 'returned':       return 'danger';
-    case 'escalated':      return 'warning';
-    case 'finalized':      return 'dark';
-    default:               return 'light';
-  }
-}
-
-
-function saveFilters() {
-  localStorage.setItem('inboxFilters', JSON.stringify({
-    status: document.getElementById('statusFilter').value,
-    search: document.getElementById('searchInput').value
-  }));
-}
-
-function loadSavedFilters() {
-  const s = localStorage.getItem('inboxFilters');
-  if (!s) return;
-  try {
-    const f = JSON.parse(s);
-    if (f.status) document.getElementById('statusFilter').value = f.status;
-    if (f.search) document.getElementById('searchInput').value = f.search;
-    applyFilters();
-    toggleClearButton();
-  } catch {}
-}
-
-function toggleClearButton() {
-  const show = !!(
-    document.getElementById('statusFilter').value ||
-    document.getElementById('searchInput').value
-  );
-  document.getElementById('clearFiltersBtn')
-    .classList.toggle('d-none', !show);
-}
-
-function confirmClearFilters() {
-  Swal.fire({
-    title: 'Clear All Filters?',
-    text: "This will reset all search and status filters.",
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: 'Yes, Clear'
-  }).then(r => {
-    if (r.isConfirmed) {
-      clearFilters();
-      Swal.fire('Cleared!','All filters reset.','success');
+  function tintFor(status) {
+    const s = String(status || '').toLowerCase();
+    if (s.startsWith('forwarded:')) return 't-green';
+    switch (s) {
+      case 'submitted': case 'under review': case 'escalated': return 't-amber';
+      case 'endorsed':  return 't-sky';
+      case 'approved':  return 't-green';
+      case 'rejected':  case 'returned': return 't-rose';
+      case 'finalized': return 't-dark';
+      case 'draft':     return 't-neutral';
+      default:          return 't-neutral';
     }
+  }
+
+  function fmtDate(d) {
+    if (!d) return '';
+    const dt = new Date(String(d).replace(' ', 'T'));
+    return isNaN(dt) ? '' : dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function loadInboxMemos() {
+    fetch('get_inbox.php')
+      .then(r => r.json())
+      .then(({ status, data, message }) => {
+        if (status !== 'success') {
+          container.innerHTML = `<div class="f-state is-error"><i class="bi bi-exclamation-octagon"></i><p>${esc(message || 'Could not load inbox.')}</p></div>`;
+          return;
+        }
+        groupedMemos = data || {};
+        updateTabCounts();
+        applyFilters();
+      })
+      .catch(err => {
+        console.error('Inbox fetch error:', err);
+        container.innerHTML = `<div class="f-state is-error"><i class="bi bi-wifi-off"></i><p>Failed to load inbox: ${esc(err.message)}</p></div>`;
+      });
+  }
+
+  function updateTabCounts() {
+    const set = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n; };
+    set('mainCount',      (groupedMemos.main      || []).length);
+    set('escalatedCount', (groupedMemos.escalated || []).length);
+    set('pendingCount',   (groupedMemos.pending   || []).length);
+    set('approvedCount',  (groupedMemos.approved  || []).length);
+    set('returnedCount',  (groupedMemos.returned  || []).length);
+    set('rejectedCount',  (groupedMemos.rejected  || []).length);
+    set('forwardedCount', (groupedMemos.forwarded || []).length);
+
+    const hasUnread = (groupedMemos.main || []).some(m => !m.viewed);
+    document.getElementById('mainNewDot').classList.toggle('d-none', !hasUnread);
+  }
+
+  function applyFilters() {
+    const statusFilter = (document.getElementById('statusFilter').value || '').toLowerCase();
+    const searchFilter = (document.getElementById('searchInput').value || '').toLowerCase();
+
+    const base = groupedMemos[activeTab] || [];
+    filteredMemos = base.filter(m => {
+      const s = String(m.status || '').toLowerCase();
+      const matchesStatus = !statusFilter || s === statusFilter;
+      const matchesSearch = !searchFilter ||
+        String(m.subject || '').toLowerCase().includes(searchFilter) ||
+        String(m.memo_id || '').toLowerCase().includes(searchFilter);
+      return matchesStatus && matchesSearch;
+    });
+
+    currentPage = 1;
+    renderTable();
+  }
+
+  function renderTable() {
+    const memos = filteredMemos;
+    if (memos.length === 0) {
+      container.innerHTML = `<div class="f-state"><i class="bi bi-inbox"></i><p>No memos match this view.</p></div>`;
+      pager.innerHTML = '';
+      return;
+    }
+
+    const start = (currentPage - 1) * memosPerPage;
+    const page  = memos.slice(start, start + memosPerPage);
+
+    const rows = page.map(m => {
+      const href = (m.type === 'Direct Memo' ? 'view_direct_memo.php' : 'view_memo.php') + '?memo_id=' + encodeURIComponent(m.id);
+      return `
+      <tr class="${m.viewed ? '' : 'is-unread'}">
+        <td class="font-monospace">${esc(m.memo_id)}</td>
+        <td>
+          <span class="ib-subject">${esc(m.subject)}</span>
+          ${m.viewed ? '' : '<span class="pill t-sky ms-2">New</span>'}
+        </td>
+        <td class="text-muted">${esc(m.type)}</td>
+        <td><span class="pill ${tintFor(m.status)}">${esc(m.status)}</span></td>
+        <td class="text-muted">${esc(fmtDate(m.created_at))}</td>
+        <td>
+          <a href="${href}" data-id="${esc(m.id)}" data-type="${esc(m.type)}"
+             class="btn btn-sm ${m.viewed ? 'btn-outline-success' : 'btn-success'} ib-open">
+            <i class="bi bi-box-arrow-up-right me-1"></i>Open
+          </a>
+        </td>
+      </tr>`;
+    }).join('');
+
+    container.innerHTML = `
+      <div class="ib-panel table-responsive">
+        <table class="table table-borderless ib-table align-middle">
+          <thead>
+            <tr>
+              <th>Reference</th><th>Subject</th><th>Type</th><th>Status</th><th>Date</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+
+    const totalPages = Math.ceil(memos.length / memosPerPage);
+    if (totalPages <= 1) { pager.innerHTML = ''; return; }
+    let html = '';
+    for (let i = 1; i <= totalPages; i++) {
+      html += `<button class="${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+    }
+    pager.innerHTML = html;
+  }
+
+  function markInboxViewed(id, memoType) {
+    return fetch('mark_inbox_viewed.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ memo_id: id, memo_type: memoType === 'Direct Memo' ? 'Direct' : 'Workflow' })
+    });
+  }
+
+  function saveFilters() {
+    localStorage.setItem('inboxFilters', JSON.stringify({
+      status: document.getElementById('statusFilter').value,
+      search: document.getElementById('searchInput').value
+    }));
+  }
+
+  function loadSavedFilters() {
+    const s = localStorage.getItem('inboxFilters');
+    if (!s) return;
+    try {
+      const f = JSON.parse(s);
+      if (f.status) document.getElementById('statusFilter').value = f.status;
+      if (f.search) document.getElementById('searchInput').value = f.search;
+    } catch {}
+  }
+
+  function toggleClearButton() {
+    const show = !!(document.getElementById('statusFilter').value || document.getElementById('searchInput').value);
+    document.getElementById('clearFiltersBtn').classList.toggle('d-none', !show);
+  }
+
+  function clearFilters() {
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('searchInput').value = '';
+    localStorage.removeItem('inboxFilters');
+    toggleClearButton();
+    applyFilters();
+  }
+
+  // ── Wiring ──────────────────────────────────────────────────────
+  document.getElementById('inboxChips').addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    document.querySelectorAll('#inboxChips .chip').forEach(c => c.classList.toggle('active', c === chip));
+    activeTab = chip.dataset.status;
+    localStorage.setItem('activeInboxTab', activeTab);
+    applyFilters();
   });
-}
 
-function clearFilters() {
-  document.getElementById('statusFilter').value = '';
-  document.getElementById('searchInput').value = '';
-  localStorage.removeItem('inboxFilters');
+  document.getElementById('statusFilter').addEventListener('change', () => { saveFilters(); applyFilters(); toggleClearButton(); });
+
+  let t;
+  document.getElementById('searchInput').addEventListener('input', () => {
+    clearTimeout(t);
+    t = setTimeout(() => { saveFilters(); applyFilters(); toggleClearButton(); }, 150);
+  });
+
+  document.getElementById('clearFiltersBtn').addEventListener('click', clearFilters);
+
+  pager.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-page]');
+    if (!btn) return;
+    currentPage = Number(btn.dataset.page);
+    renderTable();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  container.addEventListener('click', (e) => {
+    const link = e.target.closest('a.ib-open');
+    if (!link) return;
+    e.preventDefault();
+    const { id, type } = link.dataset;
+    markInboxViewed(id, type).finally(() => { window.location = link.href; });
+  });
+
+  // Activate saved chip
+  document.querySelectorAll('#inboxChips .chip').forEach(c => c.classList.toggle('active', c.dataset.status === activeTab));
+
+  loadSavedFilters();
   toggleClearButton();
-  applyFilters();
-}
+  loadInboxMemos();
+})();
 </script>
-
-
-
-
-
- 

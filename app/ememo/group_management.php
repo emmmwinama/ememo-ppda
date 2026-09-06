@@ -1,39 +1,33 @@
 <!-- Group Management Section -->
-<h4 class="mb-4">Group Management</h4>
-
-<!-- Action Buttons -->
 <div class="mb-3 d-flex justify-content-between">
-  <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#createGroupModal">
-    ➕ New Group
+  <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#createGroupModal">
+    <i class="bi bi-plus-lg me-1"></i>New group
   </button>
-  <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addMemberModal" id="openAddMemberBtn" disabled>
-    ➕ Add Member
+  <button class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#addMemberModal" id="openAddMemberBtn" disabled>
+    <i class="bi bi-person-plus me-1"></i>Add member
   </button>
 </div>
 
-<!-- Group Select Dropdown -->
 <div class="row mb-4">
   <div class="col-md-4">
     <select id="groupSelect" class="form-select">
-      <option value="">Select Group</option>
-      <!-- Options populated via JS -->
+      <option value="">Select group</option>
     </select>
   </div>
 </div>
 
-<!-- Members Table -->
-<div class="table-responsive">
-  <table class="table table-bordered" id="groupMembersTable">
+<div class="f-panel table-responsive">
+  <table class="table table-borderless f-table align-middle mb-0" id="groupMembersTable">
     <thead>
       <tr>
-        <th>Full Name</th>
+        <th>Full name</th>
         <th>Username</th>
         <th>Email</th>
         <th>Action</th>
       </tr>
     </thead>
     <tbody>
-      <!-- Members populated via JS -->
+      <tr><td colspan="4"><div class="f-state"><i class="bi bi-people"></i><p>Select a group to see its members.</p></div></td></tr>
     </tbody>
   </table>
 </div>

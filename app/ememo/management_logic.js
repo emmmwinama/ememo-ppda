@@ -25,6 +25,10 @@ function loadUsers() {
     .then(users => {
       const tbody = document.querySelector('#userTable tbody');
       tbody.innerHTML = '';
+      if (!users.length) {
+        tbody.innerHTML = '<tr><td colspan="6"><div class="f-state"><i class="bi bi-people"></i><p>No users yet.</p></div></td></tr>';
+        return;
+      }
       users.forEach(u => {
         tbody.innerHTML += `
           <tr id="userRow${u.id}">
@@ -199,6 +203,10 @@ function loadGroupMembers(groupId) {
     .then(data => {
       const tbody = document.querySelector('#groupMembersTable tbody');
       tbody.innerHTML = '';
+      if (!data.length) {
+        tbody.innerHTML = '<tr><td colspan="4"><div class="f-state"><i class="bi bi-person-plus"></i><p>No members in this group.</p></div></td></tr>';
+        return;
+      }
       data.forEach(u => {
         tbody.innerHTML += `
           <tr>

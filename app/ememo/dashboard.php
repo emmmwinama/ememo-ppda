@@ -28,6 +28,26 @@ function humanDuration(string $hms): string {
     return $parts?implode(' ', $parts):'0 sec';
 }
 
+/** Relative "x ago" string, largest unit only. */
+function time_elapsed_string($datetime, $full = false) {
+    $now = new DateTime;
+    $ago = new DateTime($datetime);
+    $diff = $now->diff($ago);
+
+    $diff->w = floor($diff->d / 7);
+    $diff->d -= $diff->w * 7;
+
+    $units = ['y'=>'year','m'=>'month','w'=>'week','d'=>'day','h'=>'hour','i'=>'minute','s'=>'second'];
+    $strings = [];
+    foreach ($units as $key => $text) {
+        if ($diff->$key) {
+            $strings[] = $diff->$key . ' ' . $text . ($diff->$key > 1 ? 's' : '');
+        }
+    }
+    if (!$full) $strings = array_slice($strings, 0, 1);
+    return $strings ? implode(', ', $strings) . ' ago' : 'just now';
+}
+
 // 1) Core counts
 $total     = (int)$conn->query("SELECT COUNT(*) FROM memos")->fetch_row()[0];
 $drafted   = (int)$conn->query("SELECT COUNT(*) FROM memos WHERE status='Draft'")->fetch_row()[0];
@@ -156,173 +176,268 @@ $avgReviewToApprove = $conn->query("
 
 $durSubmitReview  = humanDuration($avgSubmitToReview);
 $durReviewApprove = humanDuration($avgReviewToApprove);
+
+// Tint class per status pill in the overdue table
+$pillFor = function (string $status): string {
+    return [
+      'Submitted'    => 't-amber',
+      'Under Review' => 't-amber',
+      'Endorsed'     => 't-sky',
+      'Escalated'    => 't-sky',
+      'Approved'     => 't-green',
+      'Rejected'     => 't-rose',
+      'Returned'     => 't-slate',
+    ][$status] ?? 't-neutral';
+};
 ?>
 <style>
-  .stat-card { border: 1px solid var(--border); border-radius: var(--radius-md); }
-  .stat-icon {
-    width: 44px; height: 44px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem; flex-shrink: 0;
+  /* ── Dashboard (Farmis-style clean surface) ─────────────────────── */
+  .dash { --gap: 1rem; }
+  .dash-head { margin-bottom: 1.4rem; }
+  .dash-title { font-size: 1.4rem; font-weight: 800; margin: 0; color: var(--text); }
+  .dash-subtitle { color: var(--muted); font-size: .9rem; margin: .2rem 0 0; }
+
+  .kpi-row { display: flex; flex-wrap: wrap; gap: var(--gap); margin-bottom: 1.6rem; }
+  .kpi {
+    flex: 1 1 150px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.1rem;
+    box-shadow: var(--shadow-flat);
+    transition: box-shadow .18s ease, transform .18s ease;
   }
-  .stuck-table tbody tr:hover { background: #fff3cd; }
+  .kpi:hover { box-shadow: var(--shadow-flat-hover); transform: translateY(-1px); }
+  .kpi-icon {
+    width: 38px; height: 38px; border-radius: 11px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 1.05rem; margin-bottom: .6rem;
+  }
+  .kpi-value { font-size: 1.6rem; font-weight: 800; line-height: 1; color: var(--text); }
+  .kpi-label { font-size: .8rem; color: var(--muted); margin-top: .35rem; }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-flat);
+    height: 100%;
+  }
+  .panel-head {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .85rem 1.1rem;
+    font-weight: 600; font-size: .95rem; color: var(--text);
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-head .bi { color: var(--muted); font-size: 1rem; }
+  .panel-head .count-pill { margin-left: auto; }
+  .panel-body { padding: 1.1rem; }
+  .panel-body canvas { max-height: 230px; }
+
+  .mini-row { display: flex; }
+  .mini { flex: 1; text-align: center; padding: .4rem .5rem; }
+  .mini + .mini { border-left: 1px solid var(--border); }
+  .mini-label { font-size: .78rem; color: var(--muted); }
+  .mini-value { font-size: 1.15rem; font-weight: 700; color: var(--text); margin-top: .25rem; }
+
+  .overdue-table { margin: 0; font-size: .9rem; }
+  .overdue-table thead th {
+    background: var(--bg); color: var(--muted);
+    font-weight: 600; border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  .overdue-table tbody td { vertical-align: middle; }
+  .overdue-table tbody tr:hover { background: #fff7ed; }
+  .overdue-table .memo-ref { font-weight: 600; color: var(--text); }
+
+  .pill {
+    display: inline-block; padding: .15rem .6rem;
+    border-radius: var(--radius-pill); font-size: .74rem; font-weight: 600;
+  }
+  .count-pill {
+    display: inline-block; min-width: 1.5rem; text-align: center;
+    padding: .1rem .5rem; border-radius: var(--radius-pill);
+    font-size: .78rem; font-weight: 700;
+  }
+
+  /* Tint tokens — soft background + readable foreground */
+  .t-dark    { background: #e8ebee; color: #1f2937; }
+  .t-neutral { background: #eef1f4; color: #475569; }
+  .t-slate   { background: #eef1f4; color: #475569; }
+  .t-green   { background: var(--brand-light); color: var(--brand-dark); }
+  .t-amber   { background: #fdefda; color: #b45309; }
+  .t-rose    { background: #fdecee; color: #be123c; }
+  .t-sky     { background: #e6f4fb; color: #0369a1; }
+
+  @media (max-width: 575.98px) {
+    .kpi { flex-basis: 42%; }
+  }
 </style>
 
-<div class="page-header d-flex align-items-center mb-4">
-  <h4 class="mb-0"><i class="bi bi-speedometer2 me-2 text-success"></i>Dashboard</h4>
-</div>
+<div class="dash">
 
-    <!-- KPI Cards -->
-    <div class="row g-4 mb-5">
-      <?php foreach ([
-        ['Total',$total,'success','journal-text'],
-        ['Pending',$pending,'warning','hourglass-split'],
-        ['Approved',$approved,'primary','check-circle'],
-        ['Rejected',$rejected,'danger','x-circle'],
-        ['Returned',$returned,'secondary','arrow-counterclockwise'],
-        ['Escalated',$escalated,'info','exclamation-circle'],
-      ] as list($label,$value,$color,$icon)): ?>
-        <div class="col-6 col-sm-4 col-lg-2">
-          <div class="card stat-card h-100">
-            <div class="card-body d-flex align-items-center gap-3">
-              <div class="stat-icon bg-<?= $color ?> bg-opacity-10 text-<?= $color ?>">
-                <i class="bi bi-<?= $icon ?>"></i>
-              </div>
-              <div>
-                <small class="text-muted d-block"><?= $label ?></small>
-                <h4 class="mb-0 text-<?= $color ?>"><?= $value ?></h4>
-              </div>
-            </div>
-          </div>
-        </div>
-      <?php endforeach; ?>
-    </div>
-
-    <!-- Charts & Transition Times -->
-    <div class="row mb-5 gx-4 gy-4">
-      <div class="col-md-4">
-        <div class="card h-100 shadow-sm">
-          <div class="card-header bg-light">📊 Status Distribution</div>
-          <div class="card-body"><canvas id="statusPie"></canvas></div>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="card h-100 shadow-sm">
-          <div class="card-header bg-light">⏳ Avg Days in Status</div>
-          <div class="card-body"><canvas id="avgBar"></canvas></div>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="card h-100 shadow-sm">
-          <div class="card-header bg-light">🚦 Avg Transition Time</div>
-          <div class="card-body d-flex justify-content-around">
-            <div class="text-center">
-              <small class="text-muted">Submit → Review</small><br>
-              <strong><?= $durSubmitReview ?></strong>
-            </div>
-            <div class="text-center">
-              <small class="text-muted">Review → Approve</small><br>
-              <strong><?= $durReviewApprove ?></strong>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Overdue Memos -->
-<?php
-// helper at top of your view
-function time_elapsed_string($datetime, $full = false) {
-    $now = new DateTime;
-    $ago = new DateTime($datetime);
-    $diff = $now->diff($ago);
-
-    $diff->w = floor($diff->d / 7);
-    $diff->d -= $diff->w * 7;
-
-    $units = ['y'=>'year','m'=>'month','w'=>'week','d'=>'day','h'=>'hour','i'=>'minute','s'=>'second'];
-    $strings = [];
-    foreach ($units as $key => $text) {
-        if ($diff->$key) {
-            $strings[] = $diff->$key . ' ' . $text . ($diff->$key > 1 ? 's' : '');
-        }
-    }
-    if (!$full) $strings = array_slice($strings, 0, 1);
-    return $strings ? implode(', ', $strings) . ' ago' : 'just now';
-}
-?>
-
-<div class="card mb-5 shadow-sm">
-  <div class="card-header bg-danger text-white">🚨 Overdue Memos (no action for over 3 days)</div>
-  <div class="table-responsive">
-    <table class="table mb-0 stuck-table">
-      <thead class="table-light">
-        <tr>
-          <th>Memo ID</th>
-          <th>Status</th>
-          <th>Days Open</th>
-          <th>Next Actor</th>
-          <th>Last Actor</th>
-          <th>Last Action</th>
-          <th>When</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php if (empty($overdue)): ?>
-          <tr><td colspan="7" class="text-center text-muted">None</td></tr>
-        <?php else: foreach ($overdue as $r): ?>
-          <tr>
-            <td><?= htmlspecialchars($r['memo_id']) ?></td>
-            <td><?= htmlspecialchars($r['status']) ?></td>
-            <td><?= (int)$r['days_open'] ?></td>
-            <td><?= htmlspecialchars($r['next_actor']) ?></td>
-            <td><?= htmlspecialchars($r['last_actor']) ?></td>
-            <td><?= htmlspecialchars($r['last_action']) ?></td>
-            <td>
-              <?= htmlspecialchars(time_elapsed_string($r['last_when'])) ?>
-            </td>
-          </tr>
-        <?php endforeach; endif; ?>
-      </tbody>
-    </table>
+  <div class="dash-head">
+    <h1 class="dash-title">Dashboard</h1>
+    <p class="dash-subtitle">Overview of memo activity and workflow health</p>
   </div>
+
+  <!-- KPI cards -->
+  <div class="kpi-row">
+    <?php foreach ([
+      ['Total memos', $total,     't-dark',    'journal-text'],
+      ['Drafts',      $drafted,   't-neutral', 'pencil-square'],
+      ['Pending',     $pending,   't-amber',   'hourglass-split'],
+      ['Approved',    $approved,  't-green',   'check2-circle'],
+      ['Rejected',    $rejected,  't-rose',    'x-circle'],
+      ['Returned',    $returned,  't-slate',   'arrow-counterclockwise'],
+      ['Escalated',   $escalated, 't-sky',     'exclamation-triangle'],
+    ] as [$label, $value, $tint, $icon]): ?>
+      <div class="kpi">
+        <div class="kpi-icon <?= $tint ?>"><i class="bi bi-<?= $icon ?>"></i></div>
+        <div class="kpi-value"><?= number_format($value) ?></div>
+        <div class="kpi-label"><?= $label ?></div>
+      </div>
+    <?php endforeach; ?>
+  </div>
+
+  <!-- Charts & transition times -->
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-lg-4">
+      <div class="panel">
+        <div class="panel-head"><i class="bi bi-pie-chart"></i> Status distribution</div>
+        <div class="panel-body"><canvas id="statusPie"></canvas></div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-4">
+      <div class="panel">
+        <div class="panel-head"><i class="bi bi-bar-chart"></i> Avg days in status</div>
+        <div class="panel-body"><canvas id="avgBar"></canvas></div>
+      </div>
+    </div>
+    <div class="col-12 col-lg-4">
+      <div class="panel">
+        <div class="panel-head"><i class="bi bi-stopwatch"></i> Avg transition time</div>
+        <div class="panel-body">
+          <div class="mini-row">
+            <div class="mini">
+              <div class="mini-label">Submit → Review</div>
+              <div class="mini-value"><?= htmlspecialchars($durSubmitReview) ?></div>
+            </div>
+            <div class="mini">
+              <div class="mini-label">Review → Approve</div>
+              <div class="mini-value"><?= htmlspecialchars($durReviewApprove) ?></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overdue memos -->
+  <div class="panel">
+    <div class="panel-head">
+      <i class="bi bi-exclamation-triangle" style="color:#b45309;"></i>
+      Overdue memos
+      <span class="text-muted fw-normal ms-1" style="font-size:.82rem;">no action for over 3 days</span>
+      <span class="count-pill t-amber"><?= count($overdue) ?></span>
+    </div>
+    <?php if (empty($overdue)): ?>
+      <div class="f-state">
+        <i class="bi bi-check2-circle"></i>
+        <p>Nothing overdue — every memo has moved in the last 3 days.</p>
+      </div>
+    <?php else: ?>
+    <div class="table-responsive">
+      <table class="table table-borderless overdue-table">
+        <thead>
+          <tr>
+            <th>Memo ID</th>
+            <th>Status</th>
+            <th>Days open</th>
+            <th>Next actor</th>
+            <th>Last actor</th>
+            <th>Last action</th>
+            <th>When</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach ($overdue as $r): ?>
+            <tr>
+              <td class="memo-ref"><?= htmlspecialchars($r['memo_id']) ?></td>
+              <td><span class="pill <?= $pillFor($r['status']) ?>"><?= htmlspecialchars($r['status']) ?></span></td>
+              <td><span class="pill <?= (int)$r['days_open'] > 7 ? 't-rose' : 't-amber' ?>"><?= (int)$r['days_open'] ?>d</span></td>
+              <td><?= htmlspecialchars($r['next_actor']) ?></td>
+              <td class="text-muted"><?= htmlspecialchars($r['last_actor'] ?? '—') ?></td>
+              <td class="text-muted"><?= htmlspecialchars($r['last_action'] ?? '—') ?></td>
+              <td class="text-muted"><?= $r['last_when'] ? htmlspecialchars(time_elapsed_string($r['last_when'])) : '—' ?></td>
+            </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+    <?php endif; ?>
+  </div>
+
 </div>
 
-  <!-- JS -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-  document.addEventListener('DOMContentLoaded',()=>{
-    new Chart(
-      document.getElementById('statusPie'),
-      {
-        type:'pie',
-        data:{
-          labels:['Pending','Approved','Rejected','Returned','Escalated'],
-          datasets:[{
-            data:[<?= $pending?>,<?= $approved?>,<?= $rejected?>,<?= $returned?>,<?= $escalated?>],
-            backgroundColor:['#ffc107','#0d6efd','#dc3545','#6c757d','#0dcaf0']
-          }]
-        },
-        options:{responsive:true,plugins:{legend:{position:'bottom'}}}
+<!-- JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof Chart === 'undefined') return;
+
+  Chart.defaults.font.family = "'Segoe UI', system-ui, -apple-system, sans-serif";
+  Chart.defaults.font.size   = 12;
+  Chart.defaults.color       = '#6b7280';
+
+  const tint = {
+    amber: '#E8A13C', green: '#2A8F2E', rose: '#E0566B',
+    slate: '#94A3B8', sky: '#4CA9D9',
+  };
+
+  new Chart(document.getElementById('statusPie'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Pending', 'Approved', 'Rejected', 'Returned', 'Escalated'],
+      datasets: [{
+        data: [<?= $pending ?>, <?= $approved ?>, <?= $rejected ?>, <?= $returned ?>, <?= $escalated ?>],
+        backgroundColor: [tint.amber, tint.green, tint.rose, tint.slate, tint.sky],
+        borderWidth: 2,
+        borderColor: '#ffffff',
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '62%',
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, padding: 14, usePointStyle: true } }
       }
-    );
-    new Chart(
-      document.getElementById('avgBar'),
-      {
-        type:'bar',
-        data:{
-          labels:[<?= implode(',',array_map(fn($d)=>"'".$d['status']."'", $avgDays))?>],
-          datasets:[{
-            label:'Avg Days',
-            data:[<?= implode(',',array_map(fn($d)=>$d['avg_days'], $avgDays))?>],
-            backgroundColor:'#198754'
-          }]
-        },
-        options:{
-          indexAxis:'y',
-          scales:{x:{title:{display:true,text:'Days'}}},
-          plugins:{legend:{display:false}}
-        }
-      }
-    );
+    }
   });
-  </script>
+
+  new Chart(document.getElementById('avgBar'), {
+    type: 'bar',
+    data: {
+      labels: [<?= implode(',', array_map(fn($d) => "'".addslashes($d['status'])."'", $avgDays)) ?>],
+      datasets: [{
+        label: 'Avg days',
+        data: [<?= implode(',', array_map(fn($d) => $d['avg_days'], $avgDays)) ?>],
+        backgroundColor: '#2A8F2E',
+        borderRadius: 5,
+        barThickness: 16,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          title: { display: true, text: 'Days' },
+          grid: { color: '#eef1f4' },
+          border: { display: false }
+        },
+        y: { grid: { display: false }, border: { display: false } }
+      }
+    }
+  });
+});
+</script>

@@ -1,0 +1,8 @@
+# Block execution of anything uploaded here
+php_flag engine off
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8
+RemoveType .php .phtml
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options nosniff
+</IfModule>
+Options -ExecCGI -Indexes

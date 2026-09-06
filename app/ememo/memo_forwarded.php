@@ -25,14 +25,13 @@ $stmt->execute();
 $res = $stmt->get_result();
 ?>
 
-<div class="card">
-  <div class="card-header bg-success text-white">
-    <h5 class="mb-0">Forwarded Memos</h5>
-  </div>
-  <div class="card-body p-0">
+<div class="f-panel">
+  <div class="f-panel-head"><i class="bi bi-arrow-right-circle"></i> Forwarded memos</div>
+  <div class="p-0">
     <?php if ($res->num_rows): ?>
-      <table class="table table-striped mb-0">
-        <thead class="table-success">
+      <div class="table-responsive">
+      <table class="table table-borderless f-table align-middle mb-0">
+        <thead>
           <tr>
             <th>Memo #</th>
             <th>Subject</th>
@@ -67,8 +66,9 @@ $res = $stmt->get_result();
         <?php endwhile; ?>
         </tbody>
       </table>
+      </div>
     <?php else: ?>
-      <p class="p-3 mb-0 text-muted">No forwarded memos found.</p>
+      <div class="f-state"><i class="bi bi-arrow-right-circle"></i><p>No forwarded memos yet.</p></div>
     <?php endif; ?>
   </div>
 </div>

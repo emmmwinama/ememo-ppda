@@ -1,0 +1,14 @@
+<?php
+// Copy to database.php and fill in real credentials. database.php itself
+// should never be committed to version control.
+$host     = 'localhost';
+$user     = 'CHANGE_ME';
+$password = 'CHANGE_ME';
+$database = 'CHANGE_ME';
+
+$conn = new mysqli($host, $user, $password, $database);
+
+if ($conn->connect_error) {
+    die("Database connection failed: " . $conn->connect_error);
+}
+?>

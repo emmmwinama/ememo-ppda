@@ -1,0 +1,43 @@
+<?php
+// init.php
+session_start();
+header('Content-Type: application/json');
+
+require_once __DIR__ . '/vendor/autoload.php';
+use Jumbojett\OpenIDConnectClient;
+
+// 1) Instantiate OIDC client (use your real values)
+$oidc = new OpenIDConnectClient(
+    'https://idp.example.com',     // Issuer URL
+    'YOUR_CLIENT_ID',
+    'YOUR_CLIENT_SECRET'
+);
+
+// 2) Configure redirect URI and scopes
+$oidc->setRedirectURL('https://your-domain.com/callback.php');
+$oidc->addScope(['openid','profile','email']);
+
+// 3) Generate and store state & nonce
+$state = bin2hex(random_bytes(16));
+$nonce = bin2hex(random_bytes(16));
+$_SESSION['oidc_state'] = $state;
+$_SESSION['oidc_nonce'] = $nonce;
+$oidc->setState($state);
+$oidc->setNonce($nonce);
+
+// 4) Discover IdP endpoints & build the auth URL
+$discovery = $oidc->getProviderConfig(); // triggers well-known discovery
+$authEndpoint = $oidc->getProviderConfigValue('authorization_endpoint');
+
+$params = [
+    'response_type' => 'code',
+    'scope'         => implode(' ',$oidc->getScopes()),
+    'client_id'     => $oidc->getClientID(),
+    'redirect_uri'  => $oidc->getRedirectURL(),
+    'state'         => $state,
+    'nonce'         => $nonce,
+];
+
+echo json_encode([
+    'redirectUrl' => $authEndpoint . '?' . http_build_query($params)
+]);

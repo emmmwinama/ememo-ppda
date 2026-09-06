@@ -1,0 +1,244 @@
+/* ========================
+   Basic Reset & Typography
+=========================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, html {
+  font-family: 'Segoe UI', sans-serif;
+  background: #f9fafb;
+  color: #333;
+}
+
+
+.card h2 {
+  font-size: 32px;
+  font-weight: bold;
+}
+
+
+/* ========================
+   Login Page
+=========================== */
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: #ecf0f1;
+}
+
+.login-wrapper {
+  display: flex;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  width: 850px;
+  max-width: 95%;
+}
+
+/* Logo Side */
+.login-logo-area {
+  background: #2c3e50;
+  color: white;
+  width: 30%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.logo-large {
+  width: 60px;
+  margin: 0 auto 15px;
+}
+
+.login-logo-area h1 {
+  font-size: 24px;
+  margin: 0;
+}
+
+.login-logo-area .form-subtitle {
+  font-size: 14px;
+  margin-top: 10px;
+  color: #bdc3c7;
+}
+
+/* Form Side */
+.login-container {
+  width: 70%;
+  padding: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-form {
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-form h2 {
+  margin-bottom: 20px;
+}
+
+.login-form input {
+  display: block;
+  width: 100%;
+  margin-bottom: 15px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.login-form button {
+  background: #2c3e50;
+  color: white;
+  padding: 10px;
+  width: 100%;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.login-form button:hover {
+  background: #34495e;
+}
+
+/* Error Box */
+.error-box {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 10px 15px;
+  margin-bottom: 15px;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+/* ========================
+   Navbar
+=========================== */
+.navbar {
+  background: #2c3e50;
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navbar h1 {
+  font-size: 20px;
+}
+
+.user-info {
+  font-size: 14px;
+}
+
+/* ========================
+   Sidebar
+=========================== */
+/* === Sidebar (PPDA Green Theme) === */
+.sidebar {
+  background: #2e7d32; /* PPDA Green */
+}
+
+.sidebar a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 10px 20px;
+  display: block;
+  border-left: 4px solid transparent;
+  transition: all 0.2s ease-in-out;
+}
+
+.sidebar a:hover {
+  background: #388e3c;
+  border-left: 4px solid #c8e6c9;
+}
+
+/* === Dashboard Cards === */
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  margin-top: 30px;
+}
+
+.card {
+  background: #ffffff;
+  border-left: 6px solid #2e7d32;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+  transition: 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+}
+
+.card h3 {
+  margin-bottom: 10px;
+  color: #2e7d32;
+  font-size: 16px;
+}
+
+.card p {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* ========================
+   Main Content & Footer
+=========================== */
+.main-content {
+  margin-left: 220px;
+  padding: 20px;
+  padding-top: 80px;
+}
+
+.footer {
+  margin-left: 220px;
+  padding: 15px 20px;
+  background: #ddd;
+  position: fixed;
+  bottom: 0;
+  width: calc(100% - 220px);
+  text-align: center;
+}
+
+/* ========================
+   Responsive (Optional)
+=========================== */
+@media (max-width: 768px) {
+  .login-wrapper {
+    flex-direction: column;
+    width: 90%;
+    height: auto;
+  }
+
+  .login-logo-area,
+  .login-container {
+    width: 100%;
+    padding: 30px;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .main-content,
+  .footer {
+    margin-left: 0;
+    width: 100%;
+  }
+}

@@ -1,0 +1,49 @@
+08-07-2025
+Introduction of external letters drafts 
+
+-- Table: memo_outgoing_letters
+CREATE TABLE memo_outgoing_letters (
+  id                  INT(11)         NOT NULL AUTO_INCREMENT,
+  memo_id             INT(11)         NOT NULL,
+  letter_date         DATE            NOT NULL DEFAULT CURRENT_DATE,
+  letter_ref_no       VARCHAR(50)     NOT NULL,
+  letter_subject      VARCHAR(255)    NOT NULL,
+  letter_content      TEXT            NOT NULL,
+  letter_status       ENUM('Draft','Submitted','Approved')
+                                      NOT NULL DEFAULT 'Draft',
+  drafted_by          INT(11)         NOT NULL,
+  signed_by           INT(11)         DEFAULT NULL,
+  signed_at           TIMESTAMP       NULL,
+  letter_signature    MEDIUMTEXT      NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY ux_mol_memo_id (memo_id),
+  KEY fk_mol_drafted_by (drafted_by),
+  KEY fk_mol_signed_by  (signed_by),
+  CONSTRAINT fk_mol_memo
+    FOREIGN KEY (memo_id) REFERENCES memos(id)
+      ON DELETE CASCADE,
+  CONSTRAINT fk_mol_drafted_by
+    FOREIGN KEY (drafted_by) REFERENCES users(id),
+  CONSTRAINT fk_mol_signed_by
+    FOREIGN KEY (signed_by)  REFERENCES users(id)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci;
+
+
+-- Table: memo_outgoing_letter_recipients
+CREATE TABLE memo_outgoing_letter_recipients (
+  id                    INT(11)       NOT NULL AUTO_INCREMENT,
+  outgoing_letter_id    INT(11)       NOT NULL,
+  position              VARCHAR(255)  NOT NULL,
+  address               TEXT          NOT NULL,
+  sort_order            INT UNSIGNED  NOT NULL DEFAULT 1,
+  PRIMARY KEY (id),
+  KEY idx_molr_outgoing_letter_id (outgoing_letter_id),
+  CONSTRAINT fk_molr_outgoing_letter
+    FOREIGN KEY (outgoing_letter_id)
+      REFERENCES memo_outgoing_letters(id)
+      ON DELETE CASCADE
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci;

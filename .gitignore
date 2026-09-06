@@ -1,0 +1,35 @@
+# ── Credentials / config ─────────────────────────────
+config/database.php
+app/ememo/ppdaememo-*.json
+*.pem
+*.key
+*credentials*.json
+*service-account*.json
+
+# ── Archives / backups / mobile builds ───────────────
+*.zip
+*.apk
+*.tar
+*.tar.gz
+*.gz
+*-back.zip
+
+# ── Database dumps ──────────────────────────────────
+*.sql
+
+# ── Logs ────────────────────────────────────────────
+error_log
+**/error_log
+*.log
+
+# ── Runtime-generated data ──────────────────────────
+app/ememo/uploads/
+app/ememo/signatures/
+app/ememo/libs/libs/mpdf/tmp/
+app/ememo/libs/libs/mpdf/**/tmp/
+
+# ── Editor / OS ─────────────────────────────────────
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

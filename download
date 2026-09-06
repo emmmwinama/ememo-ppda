@@ -1,0 +1,154 @@
+<?php
+// index.php
+session_start();
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
+$user = htmlspecialchars($_SESSION['username']);
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PPDA Digital Hub – Dashboard</title>
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body, html {
+      font-family: 'Inter', sans-serif;
+      background: #f0f4f8;
+      height: 100%;
+    }
+    .navbar {
+      background: #ffffff;
+    }
+    .navbar-brand img {
+      height: 40px;
+    }
+    .welcome-card {
+      background: #ffffff;
+      border-left: 5px solid #3db83a;
+      border-radius: .5rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    .app-card {
+      border: none;
+      border-radius: .75rem;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .app-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+    }
+    .app-icon {
+      font-size: 3rem;
+      color: #3db83a;
+      margin-bottom: 1rem;
+    }
+    .btn-ppda {
+      background-color: #3db83a;
+      border-color: #3db83a;
+    }
+    .btn-ppda:hover {
+      background-color: #2a8f2a;
+      border-color: #2a8f2a;
+    }
+    .search-input {
+      max-width: 400px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg shadow-sm">
+    <div class="container">
+      <a class="navbar-brand" href="index.php">
+        <img src="logo.jpg" alt="PPDA Digital Hub Logo">
+      </a>
+      <div class="ms-auto d-flex align-items-center">
+        <span class="me-3 text-secondary">Hello, <strong><?= $user ?></strong></span>
+        <button id="logoutBtn" class="btn btn-outline-secondary">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-5">
+    <!-- Welcome Card -->
+    <div class="welcome-card text-center">
+      <h2 class="fw-bold mb-2">Welcome to PPDA Digital Hub</h2>
+      <p class="text-muted mb-4">Access all PPDA applications in one place.</p>
+      <input id="searchApp" type="text" class="form-control mx-auto search-input" placeholder="Search applications…">
+    </div>
+
+    <!-- Application Grid -->
+    <div id="appsGrid" class="row g-4">
+      <!-- e-Memo -->
+      <div class="col-sm-6 col-lg-4 app-item">
+        <div class="card app-card h-100 text-center p-4">
+          <i class="bi bi-file-earmark-text-fill app-icon"></i>
+          <h5 class="card-title">e-Memo</h5>
+          <p class="card-text text-muted">Internal communication &amp; approvals</p>
+          <button class="btn btn-ppda mt-auto" onclick="launchApp('ememo')">Open</button>
+        </div>
+      </div>
+      <!-- e-Service -->
+      <div class="col-sm-6 col-lg-4 app-item">
+        <div class="card app-card h-100 text-center p-4">
+          <i class="bi bi-gear-fill app-icon"></i>
+          <h5 class="card-title">e-Service</h5>
+          <p class="card-text text-muted">Supplier management &amp; reviews</p>
+          <button class="btn btn-ppda mt-auto" onclick="launchApp('eservice')">Open</button>
+        </div>
+      </div>
+      <!-- Reports -->
+      <div class="col-sm-6 col-lg-4 app-item">
+        <div class="card app-card h-100 text-center p-4">
+          <i class="bi bi-graph-up-arrow app-icon"></i>
+          <h5 class="card-title">Reports</h5>
+          <p class="card-text text-muted">Analytics &amp; dashboards</p>
+          <button class="btn btn-ppda mt-auto" onclick="launchApp('reports')">Open</button>
+        </div>
+      </div>
+      <!-- Add more apps here -->
+    </div>
+  </div>
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Launch an application
+    function launchApp(app) {
+      window.location.href = `/app/${app}/index.php`;
+    }
+
+    // Handle logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      fetch('logout.php', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Accept': 'application/json' }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) window.location.href = 'login.php';
+      });
+    });
+
+    // Filter apps by search
+    document.getElementById('searchApp').addEventListener('input', e => {
+      const term = e.target.value.toLowerCase();
+      document.querySelectorAll('.app-item').forEach(card => {
+        const title = card.querySelector('.card-title').textContent.toLowerCase();
+        card.style.display = title.includes(term) ? '' : 'none';
+      });
+    });
+  </script>
+</body>
+</html>

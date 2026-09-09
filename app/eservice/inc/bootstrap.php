@@ -19,6 +19,8 @@ require_once __DIR__ . '/../../../config/database.php';   // -> $conn (mysqli)
 mysqli_report(MYSQLI_REPORT_OFF);
 $conn->set_charset('utf8mb4');
 
+require_once __DIR__ . '/../../../lib/security.php';       // -> log_security_event()
+
 // --- Paths ---------------------------------------------------------------
 define('ES_ROOT', dirname(__DIR__));                       // .../app/eservice
 define('ES_BASE_URL', rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? '/app/eservice/x'), '/'));
@@ -119,6 +121,12 @@ function es_can(string $perm): bool {
 
 function es_require_perm(string $perm): void {
     if (es_can($perm)) return;
+    global $conn, $ES_UID;
+    log_security_event($conn, 'access_denied', [
+        'app' => 'eservice', 'severity' => 'warning',
+        'user_id' => $ES_UID ?? null, 'username' => $_SESSION['username'] ?? null,
+        'detail' => 'missing permission: ' . $perm,
+    ]);
     http_response_code(403);
     if (function_exists('es_layout_head')) {
         es_layout_head('Access denied');
@@ -153,6 +161,12 @@ function es_pde_scope(): ?int {
 
 function es_require_role(string ...$want): void {
     if (es_has_role(...$want)) return;
+    global $conn, $ES_UID;
+    log_security_event($conn, 'access_denied', [
+        'app' => 'eservice', 'severity' => 'warning',
+        'user_id' => $ES_UID ?? null, 'username' => $_SESSION['username'] ?? null,
+        'detail' => 'missing role: ' . implode('|', $want),
+    ]);
     http_response_code(403);
     // Full page when the layout is loaded (GET screens); plain text for POST handlers.
     if (function_exists('es_layout_head')) {

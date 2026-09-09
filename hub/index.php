@@ -105,6 +105,17 @@ $user = htmlspecialchars($_SESSION['username']);
           <button class="btn btn-ppda mt-auto" onclick="launchApp('reports')">Open</button>
         </div>
       </div>
+      <?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
+      <!-- Administration -->
+      <div class="col-sm-6 col-lg-4 app-item">
+        <div class="card app-card h-100 text-center p-4">
+          <i class="bi bi-sliders app-icon"></i>
+          <h5 class="card-title">Administration</h5>
+          <p class="card-text text-muted">Users, roles, reference data &amp; security</p>
+          <a class="btn btn-ppda mt-auto" href="admin/index.php">Open</a>
+        </div>
+      </div>
+      <?php endif; ?>
       <!-- Add more apps here -->
     </div>
   </div>

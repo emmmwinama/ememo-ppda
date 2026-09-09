@@ -207,9 +207,9 @@
         <i class="bi bi-person"></i><span class="label">My Profile</span>
       </a>
       <?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
-      <a href="index.php?module=user_admin" title="User Management"
-         class="nav-link <?= $mod === 'user_admin' ? 'active' : '' ?>">
-        <i class="bi bi-people"></i><span class="label">User Management</span>
+      <a href="../../hub/admin/index.php" title="Administration console"
+         class="nav-link">
+        <i class="bi bi-sliders"></i><span class="label">Administration</span>
       </a>
       <?php endif; ?>
       <a href="logout.php" title="Logout" class="nav-link text-danger">

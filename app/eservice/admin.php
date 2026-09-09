@@ -1,7 +1,8 @@
 <?php
-/** Legacy entry point — the admin panel is now under the user menu. */
-require __DIR__ . '/inc/bootstrap.php';
-redirect(es_can('users.manage') ? 'admin_users.php'
-       : (es_can('rbac.manage') ? 'admin_roles.php'
-       : (es_can('refdata.manage') ? 'admin_refdata.php'
-       : (es_can('import.run') ? 'import_legacy.php' : 'index.php'))));
+/**
+ * Moved — administration is now the unified console at hub/admin/.
+ * This stub keeps old links and bookmarks working.
+ */
+$q = $_SERVER['QUERY_STRING'] ?? '';
+header('Location: ../../hub/admin/index.php' . ($q !== '' ? '?' . $q : ''), true, 302);
+exit;

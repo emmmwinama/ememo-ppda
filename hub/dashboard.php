@@ -60,6 +60,18 @@
           </div>
         </div>
       </div>
+      <?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
+      <div class="col-sm-6 col-lg-4">
+        <div class="card app-card h-100">
+          <div class="card-body text-center">
+            <i class="bi bi-sliders fs-1 text-success mb-3"></i>
+            <h5 class="card-title">Administration</h5>
+            <p class="card-text text-muted">Users, roles, reference data & security</p>
+            <a class="btn btn-ppda" href="admin/index.php">Open</a>
+          </div>
+        </div>
+      </div>
+      <?php endif; ?>
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

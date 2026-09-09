@@ -11,10 +11,12 @@
 --  placeholder administrator so you can log in on a fresh install.
 --
 --  Rebuilt from:
---    ppda_u375699389_ememo (1).sql   (phpMyAdmin dump — structure only)
---    app/eservice/sql/01_schema.sql  (e-Services structure)
---    app/eservice/sql/02_seed.sql    (e-Services lookup data)
---    app/eservice/sql/05_rbac.sql    (e-Services roles & permissions data)
+--    ppda_u375699389_ememo (1).sql       (phpMyAdmin dump — structure only)
+--    app/eservice/sql/01_schema.sql      (e-Services structure)
+--    app/eservice/sql/02_seed.sql        (e-Services lookup data)
+--    app/eservice/sql/05_rbac.sql        (e-Services roles & permissions data)
+--    db/migrations/20260909_security.sql (security event log + login-hardening
+--                                         columns on `users`; folded in here)
 --
 --  Safe to re-run: every table is dropped first. Load the whole file at once:
 --    mysql -u <user> -p <database> < db/master_schema.sql
@@ -77,6 +79,7 @@ DROP TABLE IF EXISTS `sections`;
 DROP TABLE IF EXISTS `signatures`;
 DROP TABLE IF EXISTS `users`;
 DROP TABLE IF EXISTS `user_devices`;
+DROP TABLE IF EXISTS `security_event`;
 
 -- --- table structure -----------------------------------------------------
 
@@ -523,7 +526,26 @@ CREATE TABLE `users` (
   `active` tinyint(1) NOT NULL DEFAULT 1,
   `is_controlling_officer` tinyint(1) NOT NULL DEFAULT 0,
   `password_changed` tinyint(1) DEFAULT 0,
-  `is_secretary` tinyint(1) DEFAULT 0
+  `is_secretary` tinyint(1) DEFAULT 0,
+  `last_login_at` datetime DEFAULT NULL,
+  `pwd_updated_at` datetime DEFAULT NULL,
+  `failed_logins` smallint(6) NOT NULL DEFAULT 0,
+  `locked_until` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Platform security event log — feeds hub/admin/soc.php + audit.php.
+CREATE TABLE `security_event` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `ts` datetime NOT NULL DEFAULT current_timestamp(),
+  `app` enum('hub','ememo','eservice','reports') NOT NULL DEFAULT 'hub',
+  `event_type` varchar(40) NOT NULL,
+  `severity` enum('info','notice','warning','critical') NOT NULL DEFAULT 'info',
+  `user_id` int(11) DEFAULT NULL,
+  `username` varchar(100) DEFAULT NULL,
+  `ip` varchar(45) DEFAULT NULL,
+  `user_agent` varchar(255) DEFAULT NULL,
+  `route` varchar(190) DEFAULT NULL,
+  `detail` varchar(1000) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `user_devices` (
@@ -755,6 +777,13 @@ ALTER TABLE `user_devices`
   ADD UNIQUE KEY `uq_user_token` (`user_id`,`fcm_token`),
   ADD KEY `fcm_token` (`fcm_token`);
 
+ALTER TABLE `security_event`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `ix_se_ts` (`ts`),
+  ADD KEY `ix_se_type` (`event_type`),
+  ADD KEY `ix_se_user` (`user_id`),
+  ADD KEY `ix_se_sev` (`severity`);
+
 ALTER TABLE `approval_stages`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
@@ -889,6 +918,9 @@ ALTER TABLE `users`
 
 ALTER TABLE `user_devices`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `security_event`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `attachments`
   ADD CONSTRAINT `attachments_ibfk_1` FOREIGN KEY (`memo_id`) REFERENCES `memos` (`id`) ON DELETE CASCADE;
@@ -1119,9 +1151,9 @@ INSERT INTO `sections` (`id`, `name`, `department_id`) VALUES
 -- login: admin / admin123   (bcrypt hash below)
 INSERT INTO `users` (`id`, `username`, `password`, `full_name`, `role`, `section_id`,
   `department_id`, `position_id`, `email`, `phone_number`, `active`,
-  `is_controlling_officer`, `password_changed`, `is_secretary`) VALUES
+  `is_controlling_officer`, `password_changed`, `is_secretary`, `pwd_updated_at`) VALUES
 (1, 'admin', '$2y$12$RKi2tKXFu4iOH/ckZGIL6eQmCXcy.EOfKKj/qGrEBcscjyZv0STme', 'System Administrator',
- 'admin', NULL, NULL, NULL, 'admin@example.com', NULL, 1, 1, 0, 1);
+ 'admin', NULL, NULL, NULL, 'admin@example.com', NULL, 1, 1, 0, 1, NOW());
 
 
 -- ##########################################################################

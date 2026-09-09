@@ -20,6 +20,17 @@ function csrf_verify(): void {
     $expected = $_SESSION['csrf_token'] ?? '';
 
     if ($expected === '' || !hash_equals($expected, $sent)) {
+        $secLib = __DIR__ . '/../../lib/security.php';
+        if (is_file($secLib)) {
+            require_once $secLib;
+            if (isset($GLOBALS['conn']) && $GLOBALS['conn'] instanceof mysqli) {
+                log_security_event($GLOBALS['conn'], 'csrf_failure', [
+                    'app' => 'ememo', 'severity' => 'warning',
+                    'user_id' => $_SESSION['user_id'] ?? null,
+                    'username' => $_SESSION['username'] ?? null,
+                ]);
+            }
+        }
         http_response_code(403);
         header('Content-Type: application/json');
         echo json_encode([

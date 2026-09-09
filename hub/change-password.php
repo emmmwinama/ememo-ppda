@@ -17,7 +17,7 @@ if (empty($_SESSION['user_id'])) {
 <head>
   <meta charset="UTF-8">
   <title>PPDA DIGITAL HUB – Account Setup</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="../assets/css/theme.css" rel="stylesheet">
   <style>
     body {
@@ -122,7 +122,7 @@ if (empty($_SESSION['user_id'])) {
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 <script>
   const newPwd     = document.getElementById('new_password');

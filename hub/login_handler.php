@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/auth_lib.php';
+mysqli_report(MYSQLI_REPORT_OFF);
 session_start();
 header('Content-Type: application/json');
 
@@ -16,9 +17,19 @@ if ($username === '' || $password === '') {
     exit;
 }
 
+if (ememo_login_locked($conn, $username)) {
+    ememo_note_login($conn, $username, 'blocked');
+    echo json_encode([
+        'success' => false,
+        'message' => 'This account is temporarily locked after repeated failed attempts. Try again later or contact an administrator.'
+    ]);
+    exit;
+}
+
 $user = ememo_verify_credentials($conn, $username, $password);
 
 if ($user === null) {
+    ememo_note_login($conn, $username, 'failed');
     echo json_encode([
         'success' => false,
         'message' => 'Invalid username or password.'
@@ -27,12 +38,15 @@ if ($user === null) {
 }
 
 if (isset($user['error'])) {
+    ememo_note_login($conn, $username, 'inactive');
     echo json_encode([
         'success' => false,
         'message' => 'Account is deactivated. Contact admin.'
     ]);
     exit;
 }
+
+ememo_note_login($conn, $username, 'success');
 
 // Set session variables
 $_SESSION['user_id']                  = $user['id'];

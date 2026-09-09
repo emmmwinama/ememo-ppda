@@ -12,19 +12,13 @@ $user = htmlspecialchars($_SESSION['username']);
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PPDA Digital Hub – Dashboard</title>
-  <!-- Google Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Bootstrap Icons -->
+  <title>PPDA Digital Hub</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="../assets/css/theme.css" rel="stylesheet">
+  <link href="../assets/css/theme.css?v=<?= @filemtime(__DIR__ . '/../assets/css/theme.css') ?: time() ?>" rel="stylesheet">
+  <link href="../assets/css/app.css?v=<?= @filemtime(__DIR__ . '/../assets/css/app.css') ?: time() ?>" rel="stylesheet">
   <style>
-    body, html {
-      font-family: 'Inter', sans-serif;
-      height: 100%;
-    }
+    html { height: 100%; }
     .navbar {
       background: var(--surface);
     }
@@ -121,7 +115,7 @@ $user = htmlspecialchars($_SESSION['username']);
   </div>
 
   <!-- Bootstrap JS Bundle -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // Work out the deployment base from this page's own URL. The hub may be
     // reached as  <base>/ , <base>/index.php , or <base>/hub/index.php  (a root

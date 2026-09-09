@@ -14,8 +14,13 @@ app/ememo/ppdaememo-*.json
 *.gz
 *-back.zip
 
-# ── Database dumps ──────────────────────────────────
-*.sql
+# ── Database dumps (raw exports with production rows / PII — keep local) ──
+# Version-controlled schema lives in db/master_schema.sql and app/eservice/sql/.
+/ppda_u375699389_ememo*.sql
+/ppda_e_services-online*.sql
+/_supplier_bank_facilities.sql
+**/*.dump.sql
+*-dump.sql
 
 # ── Logs ────────────────────────────────────────────
 error_log

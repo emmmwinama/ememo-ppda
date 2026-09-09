@@ -10,6 +10,34 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !es_csrf_check()) {
     redirect('bid_registry.php');
 }
 
+/** How many of the incoming docs[] look like real, acceptable uploads. */
+function es_incoming_file_count(): int {
+    if (empty($_FILES['docs']) || !is_array($_FILES['docs']['name'] ?? null)) return 0;
+    $n = 0;
+    foreach ($_FILES['docs']['error'] as $err) {
+        if ($err === UPLOAD_ERR_OK) $n++;
+    }
+    return $n;
+}
+
+// ---- PDE withdraws a submission that is still awaiting the registry check ----
+if (($_POST['op'] ?? '') === 'withdraw') {
+    $wid  = (int) ($_POST['id'] ?? 0);
+    $wpde = es_pde_scope();
+    $wrow = $wid ? db_one("SELECT pde_id, status FROM es_bid_registry WHERE id = ?", 'i', [$wid]) : null;
+    if (!$wrow || $wpde === null || $wpde <= 0
+        || (int) $wrow['pde_id'] !== (int) $wpde || $wrow['status'] !== 'pending_registry') {
+        flash('This submission can no longer be withdrawn.', 'error');
+        redirect($wid ? "bid_registry_view.php?id=$wid" : 'bid_registry.php');
+    }
+    $st = $conn->prepare("UPDATE es_bid_registry SET status = 'withdrawn' WHERE id = ?");
+    $st->bind_param('i', $wid);
+    $st->execute();
+    $st->close();
+    flash('Submission withdrawn.', 'success');
+    redirect("bid_registry_view.php?id=$wid");
+}
+
 const ES_ATT_MAX   = 20 * 1024 * 1024;
 const ES_ATT_EXT   = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'png', 'jpg', 'jpeg', 'zip'];
 
@@ -99,6 +127,12 @@ $accDocs   = implode(',', array_values(array_intersect(
 ))) ?: null;
 
 if (!$isPde && !$pde_id) { flash('Choose the PDE.', 'error'); redirect('bid_registry_form.php'); }
+
+// A PDE's first submission must carry at least one document.
+if ($isPde && !$id && es_incoming_file_count() === 0) {
+    flash('Attach at least one document — the submission pack is required.', 'error');
+    redirect('bid_registry_form.php');
+}
 
 // ---------------------------------------------------------------- UPDATE
 if ($id) {

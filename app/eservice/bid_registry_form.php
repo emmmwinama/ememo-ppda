@@ -141,8 +141,9 @@ ob_start(); ?>
       <textarea name="submission_details" class="form-control" rows="3" placeholder="Anything the reviewer should know — scope, references, correspondence…"><?= $v('submission_details') ?></textarea>
     </div>
 
+    <?php $needFile = $isPde && !$id;   // a PDE's first submission must carry the pack ?>
     <div class="col-12">
-      <label class="form-label">Attach documents</label>
+      <label class="form-label">Attach documents<?= $needFile ? ' <span class="text-danger">*</span>' : '' ?></label>
       <?php if ($atts): ?>
         <div class="d-flex flex-column gap-1 mb-2">
           <?php foreach ($atts as $a): ?>
@@ -156,12 +157,20 @@ ob_start(); ?>
         </div>
       <?php endif; ?>
       <input type="file" name="docs[]" class="form-control" multiple
-             accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip">
-      <p class="text-muted small mb-0 mt-1">PDF, Word, Excel, images or ZIP. Up to 20&nbsp;MB per file.</p>
+             accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip" <?= $needFile ? 'required' : '' ?>>
+      <p class="text-muted small mb-0 mt-1">PDF, Word, Excel, images or ZIP. Up to 20&nbsp;MB per file.<?= $needFile ? ' At least one file is required.' : '' ?></p>
     </div>
 
     <?php if ($isPde): ?>
-      <div class="col-12"><p class="text-muted small mb-0">After submitting, the PPDA registry checks the pack is complete before it is allocated for review.</p></div>
+      <div class="col-12">
+        <div class="pde-hint">
+          <i class="bi bi-info-circle-fill"></i>
+          <span>Once you submit, the PPDA registry checks the pack is complete. You'll see the status change to
+            <strong>Under review</strong> when it is allocated to a technical officer, and you can download the
+            PPDA response letter here when the review concludes. A submission can be edited or withdrawn only
+            while it is still awaiting the registry check.</span>
+        </div>
+      </div>
     <?php endif; ?>
   </div>
 <?php

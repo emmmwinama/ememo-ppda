@@ -85,13 +85,26 @@ function es_layout_head(string $title, string $active = '', string $subtitle = '
   <script>try{if(localStorage.getItem('esNav')==='collapsed')document.getElementById('esShell').classList.add('nav-collapsed');}catch(e){}</script>
   <aside class="es-side">
     <div class="es-brand-row">
-      <a class="es-brand" href="index.php"><i class="bi bi-diagram-3-fill"></i><span>PPDA e&#8209;Services</span></a>
+      <a class="es-brand" href="index.php">
+        <i class="bi <?= $pdePortal ? 'bi-buildings-fill' : 'bi-diagram-3-fill' ?>"></i>
+        <span><?= $pdePortal ? 'PPDA PDE Portal' : 'PPDA e&#8209;Services' ?></span>
+      </a>
       <button type="button" class="es-nav-toggle" id="esNavToggle" aria-label="Collapse menu" title="Collapse menu">
         <i class="bi bi-chevron-bar-left"></i>
       </button>
     </div>
     <nav class="es-nav">
-      <?php if (es_is_admin_section($active)): ?>
+      <?php if ($pdePortal): ?>
+        <?php
+        $selfPde = basename(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '');
+        foreach (es_pde_nav_items() as $it):
+          $hp = basename(parse_url($it['href'], PHP_URL_PATH) ?: '');
+          $on = $active === $it['key'] || ($active === '' && $hp === $selfPde); ?>
+          <a href="<?= e($it['href']) ?>" class="<?= $on ? 'active' : '' ?>" title="<?= e($it['label']) ?>">
+            <i class="bi <?= e($it['icon']) ?>"></i><span><?= e($it['label']) ?></span>
+          </a>
+        <?php endforeach; ?>
+      <?php elseif (es_is_admin_section($active)): ?>
         <div class="es-nav-group">Administration</div>
         <?php foreach (es_admin_nav_items() as $it): if (!es_can($it['perm'])) continue; ?>
           <a href="<?= e($it['href']) ?>" class="<?= $active === $it['key'] ? 'active' : '' ?>" title="<?= e($it['label']) ?>">

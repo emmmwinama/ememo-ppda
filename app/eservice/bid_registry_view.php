@@ -71,6 +71,7 @@ $docChecklist = function (?string $csv, bool $showMissing = false): string {
 $canRegCheck = es_can('submission.registry_check') && $r['status'] === 'pending_registry';
 $canAllocate = es_can('submission.allocate') && $r['status'] === 'pending_allocation';
 $canResubmit = $isPde && $r['status'] === 'returned_to_pde';
+$canWithdraw = $isPde && ($pdeScope ?? 0) > 0 && $r['status'] === 'pending_registry';
 $canEditReg  = es_can('submission.registry_check') && in_array($r['status'], ['pending_registry', 'pending_allocation'], true);
 $canStart    = es_can('analysis.start') && !$analysis && $r['status'] === 'assigned'
                && ((int) $r['assigned_officer_id'] === $ES_UID || es_can('submission.allocate'));
@@ -106,11 +107,20 @@ es_layout_head('Submission · ' . $r['serial_no'], 'registry');
   </div>
   <div class="d-flex gap-2">
     <a href="bid_registry.php" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a>
-    <?php if ($canResubmit || $canEditReg): ?>
+    <?php if ($canResubmit || $canEditReg || $canWithdraw): ?>
       <button type="button" class="btn btn-outline-secondary btn-sm"
               data-drawer="bid_registry_form.php?id=<?= $id ?>&amp;partial=1" data-drawer-title="Edit submission">
         <i class="bi bi-pencil me-1"></i><?= $canResubmit ? 'Edit &amp; resubmit' : 'Edit' ?>
       </button>
+    <?php endif; ?>
+    <?php if ($canWithdraw): ?>
+      <form method="post" action="bid_registry_save.php" class="d-inline"
+            onsubmit="return confirm('Withdraw this submission? The PPDA registry will no longer process it.');">
+        <input type="hidden" name="_csrf" value="<?= e(es_csrf_token()) ?>">
+        <input type="hidden" name="op" value="withdraw">
+        <input type="hidden" name="id" value="<?= $id ?>">
+        <button class="btn btn-outline-danger btn-sm"><i class="bi bi-x-circle me-1"></i>Withdraw</button>
+      </form>
     <?php endif; ?>
     <?php if ($analysis && !$isPde): ?>
       <a href="bid_analysis_view.php?id=<?= (int) $analysis['id'] ?>" class="btn btn-success btn-sm">Open analysis</a>

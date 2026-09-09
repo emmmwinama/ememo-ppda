@@ -65,17 +65,21 @@ es_layout_head('Suppliers', 'suppliers');
   <?php else: ?>
     <div class="f-panel table-responsive">
       <table class="table table-borderless f-table align-middle mb-0">
-        <thead><tr><th>Code</th><th>Name</th><th>TIN</th><th>Country</th><th>Status</th><th>Expires</th><th>Source</th></tr></thead>
+        <thead><tr><th>Code</th><th>Name</th><th>TIN</th><th>Country</th><th>Status</th><th>Expires</th><th>Source</th><th></th></tr></thead>
         <tbody>
-          <?php foreach ($rows as $r): ?>
+          <?php foreach ($rows as $r): $vu = 'supplier_view.php?id=' . (int) $r['id']; ?>
             <tr>
               <td class="font-monospace"><?= e($r['supplier_code'] ?? '—') ?></td>
-              <td class="fw-semibold"><?= e($r['name']) ?><?php if ($r['trading_name']): ?><br><span class="text-muted small">t/a <?= e($r['trading_name']) ?></span><?php endif; ?></td>
+              <td class="fw-semibold"><a href="<?= $vu ?>" class="text-decoration-none"><?= e($r['name']) ?></a><?php if ($r['trading_name']): ?><br><span class="text-muted small">t/a <?= e($r['trading_name']) ?></span><?php endif; ?></td>
               <td class="text-muted"><?= e($r['tin'] ?? '—') ?></td>
               <td class="text-muted"><?= e($r['country_name'] ?? '—') ?></td>
               <td><span class="pill <?= $tint[$r['status']] ?? 't-neutral' ?>"><?= e($r['status']) ?></span></td>
               <td class="text-muted"><?= e($r['expire_date'] ?? '—') ?></td>
               <td class="text-muted small"><?= e($r['source']) ?></td>
+              <td class="text-end text-nowrap">
+                <a href="supplier_certificate.php?id=<?= (int) $r['id'] ?>" target="_blank" class="btn btn-sm btn-outline-secondary" title="Certificate PDF"><i class="bi bi-file-earmark-pdf"></i></a>
+                <a href="<?= $vu ?>" class="btn btn-sm btn-outline-secondary">Open</a>
+              </td>
             </tr>
           <?php endforeach; ?>
         </tbody>

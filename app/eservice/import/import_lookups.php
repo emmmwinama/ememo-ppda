@@ -56,7 +56,7 @@ function es_import_lookups(EsImport $x): void
     // Countries
     foreach (['_countries', 'countries', '_country', 'country'] as $t) {
         if (!$x->srcHas($t)) continue;
-        foreach ($x->srcAll("SELECT * FROM `" . $x->src->real_escape_string($t) . "`") as $r) {
+        foreach ($x->srcAll("SELECT * FROM `$t`") as $r) {   // $t is from a hard-coded whitelist
             $name = $x->firstNonEmpty($r, ['name', 'country_name', 'country', 'title', 'label']);
             if (!$name) continue;
             $x->upsert('es_country', ['name' => $name, 'active' => 1, 'legacy_id' => (int) ($r['id'] ?? 0)], ['legacy_id' => (int) ($r['id'] ?? 0)]);
@@ -66,7 +66,7 @@ function es_import_lookups(EsImport $x): void
     // Currencies
     foreach (['_currency', '_currencies', 'currencies', 'currency'] as $t) {
         if (!$x->srcHas($t)) continue;
-        foreach ($x->srcAll("SELECT * FROM `" . $x->src->real_escape_string($t) . "`") as $r) {
+        foreach ($x->srcAll("SELECT * FROM `$t`") as $r) {   // $t is from a hard-coded whitelist
             $code = strtoupper(trim((string) ($x->firstNonEmpty($r, ['code', 'currency_code', 'iso', 'symbol']) ?? '')));
             $name = $x->firstNonEmpty($r, ['name', 'currency_name', 'currency', 'title']) ?: $code;
             if (strlen($code) !== 3) { $x->warn("currency row #{$r['id']} has no 3-letter code — skipped"); continue; }
@@ -84,7 +84,7 @@ function es_import_lookups(EsImport $x): void
     foreach ($catMap as $kind => $cands) {
         foreach ($cands as $t) {
             if (!$x->srcHas($t)) continue;
-            foreach ($x->srcAll("SELECT * FROM `" . $x->src->real_escape_string($t) . "`") as $r) {
+            foreach ($x->srcAll("SELECT * FROM `$t`") as $r) {   // $t is from a hard-coded whitelist
                 $name = $x->firstNonEmpty($r, ['name', 'category', 'category_name', 'description', 'title', 'label']);
                 if (!$name) continue;
                 $fee = 0.0;

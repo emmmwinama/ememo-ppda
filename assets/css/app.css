@@ -343,3 +343,17 @@ body { background: var(--bg); }
 .bars .bar > span { position: absolute; inset: auto 0 100% 0; text-align: center; font-size: .62rem; color: var(--muted); }
 .bars-x { display: flex; gap: 3px; margin-top: .25rem; }
 .bars-x span { flex: 1 1 0; text-align: center; font-size: .58rem; color: var(--muted); }
+
+/* Info callout (also themed by pde.css inside .pde-portal) */
+.pde-hint {
+  border: 1px solid var(--border);
+  background: var(--brand-light);
+  color: var(--brand-dark);
+  border-radius: 12px;
+  padding: .9rem 1.05rem;
+  font-size: .9rem;
+  display: flex;
+  gap: .65rem;
+  align-items: flex-start;
+}
+.pde-hint > .bi { font-size: 1.05rem; margin-top: .05rem; flex-shrink: 0; }

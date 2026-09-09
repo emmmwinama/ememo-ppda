@@ -54,7 +54,10 @@ function es_import_bids(EsImport $x): void
             'ref_code_pde'        => $x->nz(trim((string) ($r['ref_code_pde'] ?? ''))),
             'in_procurement_plan' => $x->yn($r['is_part_of_procure_plan'] ?? 0),
             'received_by'         => $x->userByUsername($r['user'] ?? null),
-            'status'              => 'received',
+            // legacy rows are historical; the analysis step below re-opens the
+            // ones that still have an active review. ('received' is not a valid
+            // es_bid_registry.status enum value.)
+            'status'              => 'completed',
             'legacy_id'           => $legacyId,
             'ts_create'           => $x->dt($r['ts_create'] ?? null) ?? date('Y-m-d H:i:s'),
         ]);

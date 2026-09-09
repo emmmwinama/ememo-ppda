@@ -22,13 +22,7 @@ $moduleMap = [
   'closed_letters'   => 'external_closed.php',
 ];
 
-echo '<div class="container-fluid p-0">';
-echo '<div class="row g-0 flex-nowrap">';
-
-include 'sidebar.php'; // Left sidebar
-
-echo '<div class="col main-content pt-4 px-5" style="min-width:0;">';
-
+// header.php has already opened <main class="es-content"> for the shared shell.
 if (!$module) {
   include 'dashboard.php'; // Default page
 } elseif (isset($moduleMap[$module])) {
@@ -36,21 +30,14 @@ if (!$module) {
   $ownsHeader = ['my_memos', 'inbox', 'endorsements', 'archive', 'profile', 'user_admin',
                  'closed_letters', 'dg_memos', 'upload_letter', 'letter_reception', 'my_letters'];
   if (!in_array($module, $ownsHeader, true)) {
-    echo '<h4 class="text-success mb-4 text-capitalize">' . str_replace('_', ' ', $module) . '</h4>';
+    echo '<div class="f-head"><h1 class="f-title text-capitalize">' . str_replace('_', ' ', $module) . '</h1></div>';
   }
   include $moduleMap[$module];
 } else {
-  // ✅ 404 Error Display
-  echo '<div class="text-center mt-5">';
-  echo '<h1 class="display-4 text-danger">404 - Module Not Found</h1>';
-  echo '<p class="lead">The page you are looking for doesn\'t exist or has been moved.</p>';
-  echo '<a href="index.php" class="btn btn-outline-success mt-3">Back to Dashboard</a>';
-  echo '</div>';
+  echo '<div class="f-state is-error"><i class="bi bi-question-circle"></i>'
+     . '<p>The page you are looking for doesn\'t exist or has been moved.</p>'
+     . '<p class="mt-2"><a href="index.php" class="btn btn-sm btn-outline-secondary">Back to dashboard</a></p></div>';
 }
-
-echo '</div>'; // content
-echo '</div>'; // row
-echo '</div>'; // container
 
 include 'footer.php';
 ?>

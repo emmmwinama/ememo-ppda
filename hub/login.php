@@ -11,6 +11,7 @@ if (isset($_SESSION['user_id'])) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>try{var t=localStorage.getItem('esTheme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
   <title>Sign in · PPDA Digital Hub</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
   <link href="../assets/css/theme.css?v=<?= @filemtime(__DIR__ . '/../assets/css/theme.css') ?: time() ?>" rel="stylesheet">
@@ -82,7 +83,7 @@ if (isset($_SESSION['user_id'])) {
       color: var(--text, #24292b); background: var(--bg, #f7f9fa); outline: none;
       transition: border-color .15s, box-shadow .15s, background .15s;
     }
-    .fld input:focus { border-color: var(--brand, #2a8f2e); background: #fff; box-shadow: 0 0 0 3px var(--brand-light, #e6f4e6); }
+    .fld input:focus { border-color: var(--brand, #2a8f2e); background: var(--surface, #fff); box-shadow: 0 0 0 3px var(--brand-light, #e6f4e6); }
     .fld .peek { position: absolute; right: .6rem; top: 50%; transform: translateY(-50%); border: 0; background: none; color: var(--muted, #6b7280); cursor: pointer; font-size: 1rem; padding: .3rem; }
 
     .lg-btn {
@@ -102,8 +103,29 @@ if (isset($_SESSION['user_id'])) {
       border: 1px solid #f6c9cf;
     }
     .lg-error.show { display: block; }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .lg-error { background: rgba(244,63,94,.14); color: #fca5b1; border-color: rgba(244,63,94,.3); }
+    }
+    :root[data-theme="dark"] .lg-error { background: rgba(244,63,94,.14); color: #fca5b1; border-color: rgba(244,63,94,.3); }
 
     .lg-foot { margin-top: 1.6rem; font-size: .8rem; color: var(--muted, #6b7280); text-align: center; }
+
+    /* Theme toggle — fixed top-right of the form panel, same icon-swap
+       convention as the app shell (assets/css/app.css .es-theme-toggle) */
+    .lg-theme-toggle {
+      position: fixed; top: 1.1rem; right: 1.1rem; z-index: 5;
+      width: 38px; height: 38px; border: 1px solid var(--border, #e3e7ea); background: var(--surface, #fff);
+      border-radius: 50%; color: var(--muted, #6b7280); font-size: 1.05rem;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .lg-theme-toggle:hover { background: var(--bg, #f7f9fa); color: var(--brand, #2a8f2e); }
+    .lg-theme-toggle .es-theme-icon-light { display: none; }
+    :root[data-theme="dark"] .lg-theme-toggle .es-theme-icon-dark { display: none; }
+    :root[data-theme="dark"] .lg-theme-toggle .es-theme-icon-light { display: inline; }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .lg-theme-toggle .es-theme-icon-dark { display: none; }
+      :root:not([data-theme="light"]) .lg-theme-toggle .es-theme-icon-light { display: inline; }
+    }
 
     .spin { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.45); border-top-color: #fff; border-radius: 50%; animation: sp .7s linear infinite; }
     @keyframes sp { to { transform: rotate(360deg); } }
@@ -119,6 +141,10 @@ if (isset($_SESSION['user_id'])) {
   </style>
 </head>
 <body>
+<button type="button" class="lg-theme-toggle" id="esThemeToggle" title="Toggle dark mode" aria-label="Toggle dark mode">
+  <i class="bi bi-moon-stars-fill es-theme-icon-dark"></i>
+  <i class="bi bi-sun-fill es-theme-icon-light"></i>
+</button>
 <div class="lg">
   <section class="lg-brand">
     <img class="photo" src="assets/login.jpg" alt="" onerror="this.remove()">
@@ -200,6 +226,18 @@ if (isset($_SESSION['user_id'])) {
 </div>
 
 <script>
+  (function () {
+    var btn = document.getElementById('esThemeToggle');
+    var root = document.documentElement;
+    var mql = window.matchMedia('(prefers-color-scheme: dark)');
+    btn.addEventListener('click', function () {
+      var current = root.getAttribute('data-theme') || (mql.matches ? 'dark' : 'light');
+      var next = current === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('esTheme', next); } catch (e) {}
+    });
+  })();
+
   var form = document.getElementById('loginForm');
   var btn = document.getElementById('loginBtn');
   var btnLabel = document.getElementById('btnLabel');

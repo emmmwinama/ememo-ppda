@@ -49,6 +49,23 @@
   });
 })();
 
+/* Dark/light toggle — the icon swap is pure CSS (theme.css), driven off the
+   data-theme attribute this sets. The same attribute is applied on first
+   paint by an inline script in each app's <head> (reads localStorage.esTheme)
+   so there's no flash before this script runs. */
+(function () {
+  var btn = document.getElementById('esThemeToggle');
+  if (!btn) return;
+  var root = document.documentElement;
+  var mql = window.matchMedia('(prefers-color-scheme: dark)');
+  btn.addEventListener('click', function () {
+    var current = root.getAttribute('data-theme') || (mql.matches ? 'dark' : 'light');
+    var next = current === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('esTheme', next); } catch (e) {}
+  });
+})();
+
 /* Keep the scroll position across a form POST + redirect that lands back on the
    same page (workflow actions, inline row editors, checklists, votes, …). */
 (function () {

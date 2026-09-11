@@ -37,6 +37,95 @@
   --shadow-flat-hover: 0 2px 6px rgba(16, 24, 32, 0.10);
 }
 
+/* ---- Dark mode ----
+   A bare :root (no [data-theme]) follows the OS preference; an explicit
+   :root[data-theme="light"|"dark"] pins it regardless of OS — set by the
+   theme toggle in assets/partials/topbar.php and read on first paint by the
+   inline anti-flash script in each app's <head>. Same convention pde.css and
+   the .trk-dur/.rec-note overrides in app.css build on. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --brand: #3fae44;
+    --brand-dark: #8fdb93;
+    --brand-light: rgba(63, 174, 68, .18);
+    --surface: #161b22;
+    --bg: #0d1117;
+    --border: #2d333b;
+    --text: #e6edf3;
+    --muted: #8b949e;
+  }
+}
+:root[data-theme="dark"] {
+  --brand: #3fae44;
+  --brand-dark: #8fdb93;
+  --brand-light: rgba(63, 174, 68, .18);
+  --surface: #161b22;
+  --bg: #0d1117;
+  --border: #2d333b;
+  --text: #e6edf3;
+  --muted: #8b949e;
+}
+
+/* Bootstrap's own floating chrome (dropdown/modal/toast/form controls) ships
+   a literal white background, so it doesn't pick up --surface/--text on its
+   own — pin it explicitly. theme.css loads after bootstrap.min.css, so these
+   win on specificity-tied selectors without needing !important. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dropdown-menu,
+  :root:not([data-theme="light"]) .modal-content,
+  :root:not([data-theme="light"]) .toast {
+    background-color: var(--surface);
+    color: var(--text);
+  }
+  :root:not([data-theme="light"]) .dropdown-item { color: var(--text); }
+  :root:not([data-theme="light"]) .dropdown-item:hover,
+  :root:not([data-theme="light"]) .dropdown-item:focus { background-color: var(--bg); color: var(--text); }
+  :root:not([data-theme="light"]) .dropdown-divider { border-color: var(--border); }
+  :root:not([data-theme="light"]) .form-control,
+  :root:not([data-theme="light"]) .form-select {
+    background-color: var(--surface); color: var(--text); border-color: var(--border);
+  }
+  :root:not([data-theme="light"]) .form-control:disabled,
+  :root:not([data-theme="light"]) .form-select:disabled { background-color: var(--bg); }
+  :root:not([data-theme="light"]) .modal-header,
+  :root:not([data-theme="light"]) .modal-footer { border-color: var(--border); }
+}
+:root[data-theme="dark"] .dropdown-menu,
+:root[data-theme="dark"] .modal-content,
+:root[data-theme="dark"] .toast {
+  background-color: var(--surface);
+  color: var(--text);
+}
+:root[data-theme="dark"] .dropdown-item { color: var(--text); }
+:root[data-theme="dark"] .dropdown-item:hover,
+:root[data-theme="dark"] .dropdown-item:focus { background-color: var(--bg); color: var(--text); }
+:root[data-theme="dark"] .dropdown-divider { border-color: var(--border); }
+:root[data-theme="dark"] .form-control,
+:root[data-theme="dark"] .form-select {
+  background-color: var(--surface); color: var(--text); border-color: var(--border);
+}
+:root[data-theme="dark"] .form-control:disabled,
+:root[data-theme="dark"] .form-select:disabled { background-color: var(--bg); }
+:root[data-theme="dark"] .modal-header,
+:root[data-theme="dark"] .modal-footer { border-color: var(--border); }
+
+/* Pill tints — literal colours (unlike .t-green, which already rides the
+   --brand-light/--brand-dark tokens above and needs no override here). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .t-dark    { background: rgba(148, 163, 184, .18); color: #cbd5e1; }
+  :root:not([data-theme="light"]) .t-neutral,
+  :root:not([data-theme="light"]) .t-slate   { background: rgba(148, 163, 184, .14); color: #b8c2cc; }
+  :root:not([data-theme="light"]) .t-amber   { background: rgba(245, 158, 11, .16); color: #fbbf7d; }
+  :root:not([data-theme="light"]) .t-rose    { background: rgba(244, 63, 94, .16); color: #fca5b1; }
+  :root:not([data-theme="light"]) .t-sky     { background: rgba(14, 165, 233, .16); color: #7dd3fc; }
+}
+:root[data-theme="dark"] .t-dark    { background: rgba(148, 163, 184, .18); color: #cbd5e1; }
+:root[data-theme="dark"] .t-neutral,
+:root[data-theme="dark"] .t-slate   { background: rgba(148, 163, 184, .14); color: #b8c2cc; }
+:root[data-theme="dark"] .t-amber   { background: rgba(245, 158, 11, .16); color: #fbbf7d; }
+:root[data-theme="dark"] .t-rose    { background: rgba(244, 63, 94, .16); color: #fca5b1; }
+:root[data-theme="dark"] .t-sky     { background: rgba(14, 165, 233, .16); color: #7dd3fc; }
+
 body, html {
   background: var(--bg);
   color: var(--text);

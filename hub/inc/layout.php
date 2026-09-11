@@ -11,6 +11,7 @@
  */
 
 require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/../../assets/partials/topbar.php';
 
 /** Sidebar model — grouped by the app each screen administers. */
 function hub_nav_items(): array {
@@ -38,6 +39,7 @@ function hub_head(string $title, string $active = '', string $subtitle = ''): vo
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>try{var t=localStorage.getItem('esTheme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
   <title><?= e($title) ?> · PPDA Administration</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
@@ -74,26 +76,17 @@ function hub_head(string $title, string $active = '', string $subtitle = ''): vo
   </aside>
 
   <div class="es-main">
-    <header class="es-topbar">
-      <div class="es-topbar-inner">
-        <span class="es-page-name"><?= e($title) ?></span>
-        <div class="dropdown es-user">
-          <button type="button" class="es-user-btn" data-bs-toggle="dropdown" aria-expanded="false">
-            <span class="es-avatar"><?= e($initials ?: 'U') ?></span>
-            <span class="es-user-name d-none d-md-inline"><?= e($u['full_name']) ?></span>
-            <i class="bi bi-chevron-down small"></i>
-          </button>
-          <ul class="dropdown-menu dropdown-menu-end mt-2">
-            <li><span class="dropdown-item-text small text-muted"><?= e($u['email'] ?: $u['username']) ?></span></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="../../app/ememo/index.php"><i class="bi bi-file-earmark-text me-2"></i>e-Memo</a></li>
-            <li><a class="dropdown-item" href="../../app/eservice/index.php"><i class="bi bi-diagram-3 me-2"></i>e-Services</a></li>
-            <li><a class="dropdown-item" href="../index.php"><i class="bi bi-grid-3x3-gap-fill me-2"></i>Digital Hub</a></li>
-            <li><a class="dropdown-item text-danger" href="../logout.php"><i class="bi bi-box-arrow-right me-2"></i>Sign out</a></li>
-          </ul>
-        </div>
-      </div>
-    </header>
+    <?php
+    ob_start(); ?>
+      <li><span class="dropdown-item-text small text-muted"><?= e($u['email'] ?: $u['username']) ?></span></li>
+      <li><hr class="dropdown-divider"></li>
+      <li><a class="dropdown-item" href="../../app/ememo/index.php"><i class="bi bi-file-earmark-text me-2"></i>e-Memo</a></li>
+      <li><a class="dropdown-item" href="../../app/eservice/index.php"><i class="bi bi-diagram-3 me-2"></i>e-Services</a></li>
+      <li><a class="dropdown-item" href="../index.php"><i class="bi bi-grid-3x3-gap-fill me-2"></i>Digital Hub</a></li>
+      <li><a class="dropdown-item text-danger" href="../logout.php"><i class="bi bi-box-arrow-right me-2"></i>Sign out</a></li>
+    <?php
+    render_es_topbar($title, $initials, $u['full_name'], ob_get_clean());
+    ?>
 
     <main class="es-content">
       <?php if ($subtitle !== ''): ?>

@@ -22,6 +22,7 @@ if ($isAdmin) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>try{var t=localStorage.getItem('esTheme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
   <title>PPDA Digital Hub</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
   <link href="../assets/css/theme.css?v=<?= @filemtime(__DIR__ . '/../assets/css/theme.css') ?: time() ?>" rel="stylesheet">
@@ -61,6 +62,42 @@ if ($isAdmin) {
       display: inline-flex; align-items: center; gap: .4rem;
     }
     .hub-logout:hover { border-color: #c0392b; color: #c0392b; }
+
+    /* Theme toggle — same icon-swap convention as the app shell (assets/css/app.css) */
+    .hub-theme-toggle {
+      width: 36px; height: 36px; flex-shrink: 0; border: none; background: none;
+      border-radius: 50%; color: var(--muted, #6b7280); font-size: 1.05rem;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .hub-theme-toggle:hover { background: var(--brand-light, #e6f4e6); color: var(--brand, #2a8f2e); }
+    .hub-theme-toggle .es-theme-icon-light { display: none; }
+    :root[data-theme="dark"] .hub-theme-toggle .es-theme-icon-dark { display: none; }
+    :root[data-theme="dark"] .hub-theme-toggle .es-theme-icon-light { display: inline; }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .hub-theme-toggle .es-theme-icon-dark { display: none; }
+      :root:not([data-theme="light"]) .hub-theme-toggle .es-theme-icon-light { display: inline; }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) body {
+        background:
+          radial-gradient(900px 380px at 12% -8%, rgba(63,174,68,.10) 0%, rgba(63,174,68,0) 70%),
+          radial-gradient(760px 360px at 100% 0%, rgba(59,91,219,.10) 0%, rgba(59,91,219,0) 65%),
+          var(--bg, #0d1117);
+      }
+      :root:not([data-theme="light"]) .hub-nav { background: rgba(13,17,23,.72); }
+      :root:not([data-theme="light"]) .hub-logout { background: var(--surface, #161b22); }
+      :root:not([data-theme="light"]) .hub-search input { background: var(--surface, #161b22); color: var(--text, #e6edf3); }
+    }
+    :root[data-theme="dark"] body {
+      background:
+        radial-gradient(900px 380px at 12% -8%, rgba(63,174,68,.10) 0%, rgba(63,174,68,0) 70%),
+        radial-gradient(760px 360px at 100% 0%, rgba(59,91,219,.10) 0%, rgba(59,91,219,0) 65%),
+        var(--bg, #0d1117);
+    }
+    :root[data-theme="dark"] .hub-nav { background: rgba(13,17,23,.72); }
+    :root[data-theme="dark"] .hub-logout { background: var(--surface, #161b22); }
+    :root[data-theme="dark"] .hub-search input { background: var(--surface, #161b22); color: var(--text, #e6edf3); }
 
     .hub-wrap { max-width: 1080px; margin: 0 auto; padding: 2.4rem 1.5rem 3.5rem; }
 
@@ -153,6 +190,10 @@ if ($isAdmin) {
   <nav class="hub-nav">
     <img src="logo.jpg" alt="PPDA">
     <span class="who">Signed in as <strong><?= $user ?></strong></span>
+    <button type="button" class="hub-theme-toggle" id="esThemeToggle" title="Toggle dark mode" aria-label="Toggle dark mode">
+      <i class="bi bi-moon-stars-fill es-theme-icon-dark"></i>
+      <i class="bi bi-sun-fill es-theme-icon-light"></i>
+    </button>
     <button id="logoutBtn" class="hub-logout"><i class="bi bi-box-arrow-right"></i>Sign out</button>
   </nav>
 
@@ -183,6 +224,18 @@ if ($isAdmin) {
   </div>
 
   <script>
+    (function () {
+      var btn = document.getElementById('esThemeToggle');
+      var root = document.documentElement;
+      var mql = window.matchMedia('(prefers-color-scheme: dark)');
+      btn.addEventListener('click', function () {
+        var current = root.getAttribute('data-theme') || (mql.matches ? 'dark' : 'light');
+        var next = current === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        try { localStorage.setItem('esTheme', next); } catch (e) {}
+      });
+    })();
+
     function hubBase() {
       var b = window.location.pathname;
       b = b.replace(/\/(hub\/)?[^\/?#]*\.[^\/?#]*$/, '');

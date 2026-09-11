@@ -2,6 +2,7 @@
 // header.php — opens the shared .es-shell layout (assets/css/app.css).
 // Standalone pages: require 'auth.php'; include 'header.php'; ...body...; include 'footer.php';
 if (session_status() === PHP_SESSION_NONE) session_start();
+require_once __DIR__ . '/../../assets/partials/topbar.php';
 
 $navUsername = $_SESSION['username'] ?? '';
 $navParts    = preg_split('/[.\s_-]+/', $navUsername, -1, PREG_SPLIT_NO_EMPTY);
@@ -39,6 +40,7 @@ $__nav = [
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>try{var t=localStorage.getItem('esTheme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
   <title>PPDA e-Memo</title>
   <?php if (function_exists('csrf_token')): ?>
   <meta name="csrf-token" content="<?= htmlspecialchars(csrf_token()) ?>">
@@ -119,35 +121,27 @@ $__nav = [
   </aside>
 
   <div class="es-main">
-    <header class="es-topbar">
-      <div class="es-topbar-inner">
-        <span class="es-page-name">e-Memo</span>
-        <div class="es-user d-flex align-items-center gap-1">
-          <div class="dropdown">
-            <button class="em-bell" type="button" id="notifDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
-              <i class="bi bi-bell"></i>
-              <span id="notifBadge" class="badge bg-danger rounded-pill" style="display:none;">0</span>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="notifDropdown" id="notifDropdownMenu">
-              <li><span class="dropdown-item-text text-muted">Loading…</span></li>
-            </ul>
-          </div>
-          <div class="dropdown">
-            <button type="button" class="es-user-btn" data-bs-toggle="dropdown" aria-expanded="false">
-              <span class="es-avatar"><?= htmlspecialchars($navInitials ?: 'U') ?></span>
-              <span class="es-user-name d-none d-md-inline"><?= htmlspecialchars($navUsername) ?></span>
-              <i class="bi bi-chevron-down small"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end mt-2">
-              <li><a class="dropdown-item" href="index.php?module=profile"><i class="bi bi-person me-2"></i>My profile</a></li>
-              <li><a class="dropdown-item" href="../../hub/index.php"><i class="bi bi-grid-3x3-gap-fill me-2"></i>Digital Hub</a></li>
-              <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item text-danger" href="logout.php"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
-            </ul>
-          </div>
-        </div>
+    <?php
+    ob_start(); ?>
+      <div class="dropdown">
+        <button class="em-bell" type="button" id="notifDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
+          <i class="bi bi-bell"></i>
+          <span id="notifBadge" class="badge bg-danger rounded-pill" style="display:none;">0</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end mt-2" aria-labelledby="notifDropdown" id="notifDropdownMenu">
+          <li><span class="dropdown-item-text text-muted">Loading…</span></li>
+        </ul>
       </div>
-    </header>
+    <?php $__emBell = ob_get_clean();
+
+    ob_start(); ?>
+      <li><a class="dropdown-item" href="index.php?module=profile"><i class="bi bi-person me-2"></i>My profile</a></li>
+      <li><a class="dropdown-item" href="../../hub/index.php"><i class="bi bi-grid-3x3-gap-fill me-2"></i>Digital Hub</a></li>
+      <li><hr class="dropdown-divider"></li>
+      <li><a class="dropdown-item text-danger" href="logout.php"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+    <?php
+    render_es_topbar('e-Memo', $navInitials, $navUsername, ob_get_clean(), $__emBell);
+    ?>
 
     <main class="es-content">
       <div id="toastContainer"></div>

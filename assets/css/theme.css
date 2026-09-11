@@ -53,6 +53,21 @@
     --border: #2d333b;
     --text: #e6edf3;
     --muted: #8b949e;
+
+    /* Bootstrap's own components (tables, dropdowns, modals, form controls,
+       toasts…) paint themselves off these Bootstrap variables, not ours —
+       .table's cell background is literally `var(--bs-body-bg)`. Re-point
+       the whole chain so every stock component follows the app's theme
+       instead of Bootstrap's baked-in white. */
+    --bs-body-bg: var(--surface);
+    --bs-body-bg-rgb: 22, 27, 34;
+    --bs-body-color: var(--text);
+    --bs-border-color: var(--border);
+    --bs-border-color-translucent: var(--border);
+    --bs-emphasis-color: var(--text);
+    --bs-secondary-color: var(--muted);
+    --bs-tertiary-color: var(--muted);
+    --bs-tertiary-bg: var(--bg);
   }
 }
 :root[data-theme="dark"] {
@@ -64,6 +79,16 @@
   --border: #2d333b;
   --text: #e6edf3;
   --muted: #8b949e;
+
+  --bs-body-bg: var(--surface);
+  --bs-body-bg-rgb: 22, 27, 34;
+  --bs-body-color: var(--text);
+  --bs-border-color: var(--border);
+  --bs-border-color-translucent: var(--border);
+  --bs-emphasis-color: var(--text);
+  --bs-secondary-color: var(--muted);
+  --bs-tertiary-color: var(--muted);
+  --bs-tertiary-bg: var(--bg);
 }
 
 /* Bootstrap's own floating chrome (dropdown/modal/toast/form controls) ships
